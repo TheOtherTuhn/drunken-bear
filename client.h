@@ -32,8 +32,8 @@ typedef struct _gs {
 	field fds[64];
 	uint8_t ptsR, ptsB; /* never greater than 100, highest bit set if
 							current player */
-	uint8_t trn; /* never greater than 30
-					=> highest nibble contains penguins left to be set*/
+	uint8_t trn; /* never greater than 30 */
+	uint8_t lft; /* penguins left to be set (R=MSN;B=LSN) */
 	move lmove; /* the move that produced this gs */
 	struct _gs* par; /* parent */
 	struct _gs* nxt; /* next sibling */

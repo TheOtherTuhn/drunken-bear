@@ -58,7 +58,7 @@ void set_curp(game_state* gs, int p) {
 
 /* p: 0=B,1=R */
 int pens_left(game_state* gs, int p) {
-	return (gs->trn & (3<<(4+2*p))) >> (2+2*p);
+	return (gs->lft & (15<<(p*4)))>>(p*4);
 }
 
 /* should be the thread, only concept for now */
@@ -78,7 +78,8 @@ void* gen_gs(void* arg) {
 					game_state* new = spawn_gs(old);
 					prv->nxt = new;
 					new->prv = prv;
-					new->fds[i] |= CPEN(old); /* set penguin */
+					new->fds[i] |= CPEN(old);
+					new->lft = ((pens_left(old, 1)<<4) - curp(old)) | (pens_left(old, 0) - !curp(old));
 					new->lmove = (move) {Set, 0, i};
 					qpush(new);
 					prv = new;
@@ -92,8 +93,12 @@ void* gen_gs(void* arg) {
 						game_state* new = spawn_gs(old);
 						prv->nxt = new;
 						new->prv = prv;
-						new->fds[i] &= ~12; /* unset penguin */
-						new->fds[j] |= CPEN(old); /* set penguin */
+						if(old->ptsR > 0x80)
+							new->ptsR += old->fds[i];
+						else
+							new->ptsB += old->fds[i];
+						new->fds[i] = 0;
+						new->fds[j] |= CPEN(old);
 						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
@@ -102,8 +107,12 @@ void* gen_gs(void* arg) {
 						game_state* new = spawn_gs(old);
 						prv->nxt = new;
 						new->prv = prv;
-						new->fds[i] &= ~12; /* unset penguin */
-						new->fds[j] |= CPEN(old); /* set penguin */
+						if(old->ptsR > 0x80)
+							new->ptsR += old->fds[i];
+						else
+							new->ptsB += old->fds[i];
+						new->fds[i] = 0;
+						new->fds[j] |= CPEN(old);
 						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
@@ -112,8 +121,12 @@ void* gen_gs(void* arg) {
 						game_state* new = spawn_gs(old);
 						prv->nxt = new;
 						new->prv = prv;
-						new->fds[i] &= ~12; /* unset penguin */
-						new->fds[j] |= CPEN(old); /* set penguin */
+						if(old->ptsR > 0x80)
+							new->ptsR += old->fds[i];
+						else
+							new->ptsB += old->fds[i];
+						new->fds[i] = 0;
+						new->fds[j] |= CPEN(old);
 						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
@@ -122,8 +135,12 @@ void* gen_gs(void* arg) {
 						game_state* new = spawn_gs(old);
 						prv->nxt = new;
 						new->prv = prv;
-						new->fds[i] &= ~12; /* unset penguin */
-						new->fds[j] |= CPEN(old); /* set penguin */
+						if(old->ptsR > 0x80)
+							new->ptsR += old->fds[i];
+						else
+							new->ptsB += old->fds[i];
+						new->fds[i] = 0;
+						new->fds[j] |= CPEN(old);
 						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
@@ -132,8 +149,12 @@ void* gen_gs(void* arg) {
 						game_state* new = spawn_gs(old);
 						prv->nxt = new;
 						new->prv = prv;
-						new->fds[i] &= ~12; /* unset penguin */
-						new->fds[j] |= CPEN(old); /* set penguin */
+						if(old->ptsR > 0x80)
+							new->ptsR += old->fds[i];
+						else
+							new->ptsB += old->fds[i];
+						new->fds[i] = 0;
+						new->fds[j] |= CPEN(old);
 						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
@@ -142,8 +163,12 @@ void* gen_gs(void* arg) {
 						game_state* new = spawn_gs(old);
 						prv->nxt = new;
 						new->prv = prv;
-						new->fds[i] &= ~12; /* unset penguin */
-						new->fds[j] |= CPEN(old); /* set penguin */
+						if(old->ptsR > 0x80)
+							new->ptsR += old->fds[i];
+						else
+							new->ptsB += old->fds[i];
+						new->fds[i] = 0;
+						new->fds[j] |= CPEN(old);
 						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
@@ -173,7 +198,8 @@ game_state* parse_gs(char* in) {
 		} else
 			new->fds[++f] = ch - 0x30;
 	}
-	new->trn = (++turn) | (rleft<<2 | bleft)<<4;
+	new->trn = ++turn;
+	new->lft = (rleft << 4) | bleft;
 	return new;
 }
 
