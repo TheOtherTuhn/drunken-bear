@@ -9,6 +9,7 @@ int pens_left(game_state* gs, int p);
 void* gen_gs(void* arg);
 game_state* parse_gs(char* in);
 void print_gs(game_state* gs);
+void print_move(move m);
 game_state* qpop(void);
 void qpush(game_state* gs);
 void qempty(void);

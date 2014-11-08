@@ -69,6 +69,7 @@ void* gen_gs(void* arg) {
 			continue;
 		/* NullMove */
 		prv = spawn_gs(old);
+		prv->lmove = (move) {Null, 0, 0};
 		qpush(prv);
 		/* SetMove */
 		if(pens_left(old,curp(old))) {
@@ -78,6 +79,7 @@ void* gen_gs(void* arg) {
 					prv->nxt = new;
 					new->prv = prv;
 					new->fds[i] |= CPEN(old); /* set penguin */
+					new->lmove = (move) {Set, 0, i};
 					qpush(new);
 					prv = new;
 				}
@@ -92,6 +94,7 @@ void* gen_gs(void* arg) {
 						new->prv = prv;
 						new->fds[i] &= ~12; /* unset penguin */
 						new->fds[j] |= CPEN(old); /* set penguin */
+						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
 					}
@@ -101,6 +104,7 @@ void* gen_gs(void* arg) {
 						new->prv = prv;
 						new->fds[i] &= ~12; /* unset penguin */
 						new->fds[j] |= CPEN(old); /* set penguin */
+						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
 					}
@@ -110,6 +114,7 @@ void* gen_gs(void* arg) {
 						new->prv = prv;
 						new->fds[i] &= ~12; /* unset penguin */
 						new->fds[j] |= CPEN(old); /* set penguin */
+						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
 					}
@@ -119,6 +124,7 @@ void* gen_gs(void* arg) {
 						new->prv = prv;
 						new->fds[i] &= ~12; /* unset penguin */
 						new->fds[j] |= CPEN(old); /* set penguin */
+						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
 					}
@@ -128,6 +134,7 @@ void* gen_gs(void* arg) {
 						new->prv = prv;
 						new->fds[i] &= ~12; /* unset penguin */
 						new->fds[j] |= CPEN(old); /* set penguin */
+						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
 					}
@@ -137,6 +144,7 @@ void* gen_gs(void* arg) {
 						new->prv = prv;
 						new->fds[i] &= ~12; /* unset penguin */
 						new->fds[j] |= CPEN(old); /* set penguin */
+						new->lmove = (move) {Run, i, j};
 						qpush(new);
 						prv = new;
 					}
@@ -185,5 +193,14 @@ void print_gs(game_state* gs) {
 			if ((fld & 15) == 0)
 				printf(" ");
 		}
+	}
+}
+
+void print_move(move m) {
+	switch(m.t) {
+		case Null: printf("N\n"); break;
+		case Set: printf("S %d %d\n", (m.to & ~7) >> 3, m.to & 7); break;
+		case Run: printf("R %d %d %d %d\n", (m.from & ~7) >> 3, m.from & 7, (m.to & ~7) >> 3, m.to & 7); break;
+		default: printf("Move not valid! {t:%d, from:%d, to:%d}\n", m.t, m.from, m.to); break;
 	}
 }

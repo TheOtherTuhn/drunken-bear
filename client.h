@@ -21,12 +21,20 @@
  * nn - # of fish, zero if no field */
 typedef uint8_t field;
 
+typedef enum { Null, Set, Run } move_type;
+
+typedef struct {
+	move_type t;
+	uint8_t from, to;
+} move;
+
 typedef struct _gs {
 	field fds[64];
 	uint8_t ptsR, ptsB; /* never greater than 100, highest bit set if
 							current player */
 	uint8_t trn; /* never greater than 30
 					=> highest nibble contains penguins left to be set*/
+	move lmove; /* the move that produced this gs */
 	struct _gs* par; /* parent */
 	struct _gs* nxt; /* next sibling */
 	struct _gs* prv; /* previous sibling */
