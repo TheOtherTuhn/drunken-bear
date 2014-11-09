@@ -4,6 +4,8 @@ struct {
 	pthread_mutex_t m;
 } curgs = {NULL,-1,PTHREAD_MUTEX_INITIALIZER};
 
+uint8_t turn = 0;
+
 game_state* spawn_gs(game_state* par) {
 	game_state* new = malloc(sizeof(game_state));
 	memcpy(new->fds, par->fds, 64 * sizeof(field));
@@ -15,7 +17,7 @@ game_state* spawn_gs(game_state* par) {
 }
 
 void free_gs(game_state* gs, field* save) {
-	if(gs==NULL)
+	if(!gs)
 		return;
 	free_gs(gs->nxt, save);
 	if(memcmp(gs->fds, save, 64 * sizeof(field))) {
@@ -64,17 +66,27 @@ int pens_left(game_state* gs, int p) {
 /* should be the thread, only concept for now */
 void* gen_gs(void* arg) {
 	game_state* old, *prv;
+	#ifdef TEST
+	{
+		old = qpop();
+		int n = 0;
+	#else
 	while(1) {
 		if(!(old = qpop())|| (old->trn & 0x0f) >= 30)
 			continue;
+	#endif
 		/* NullMove */
+		fprintf(stderr, "Generating NullMove...");
 		prv = spawn_gs(old);
 		prv->lmove = (move) {Null, 0, 0};
 		qpush(prv);
+		fprintf(stderr, "Done\n");
 		/* SetMove */
 		if(pens_left(old,curp(old))) {
+		fprintf(stderr, "Generating SetMoves...\n");
 			for(int i=0; i<64;i++) {
 				if((old->fds[i] & 12) == NPEN && field_fish(old->fds[i]) == 1) {
+					fprintf(stderr, "SetMove #%d:\n", n++);
 					game_state* new = spawn_gs(old);
 					prv->nxt = new;
 					new->prv = prv;
@@ -83,8 +95,10 @@ void* gen_gs(void* arg) {
 					new->lmove = (move) {Set, 0, i};
 					qpush(new);
 					prv = new;
+					fprintf(stderr,"%s",sprint_move(new->lmove));
 				}
 			}
+		fprintf(stderr, "Done\n");
 		} else {
 		/* RunMove */
 			for(int i=0; i < 64; i++) {
@@ -177,6 +191,7 @@ void* gen_gs(void* arg) {
 			}
 		}
 	}
+	return NULL;
 }
 
 game_state* parse_gs(char* in) {
@@ -204,29 +219,37 @@ game_state* parse_gs(char* in) {
 }
 
 void print_gs(game_state* gs) {
-	int fld = 0;
-	field* fds = gs->fds;
-	printf(" ");
-	while(fld < 64) {
-		if(fds[fld] & RPEN)
-			printf("r ");
-		else if(fds[fld] & BPEN)
-			printf("b ");
-		else
-			printf("%d ", fds[fld]);
-		if ((++fld & 7) == 0) {
-			printf("\n");
-			if ((fld & 15) == 0)
-				printf(" ");
+	printf(" R:%d/%d%s\tB:%d/%d%s\n\n", gs->ptsR & ~(1<<7), pens_left(gs, 1), (gs->ptsR & 0x80)?"*":" ",
+										gs->ptsB & ~(1<<7), pens_left(gs, 0), (gs->ptsB & 0x80)?"*":" ");
+	for(int x = 0; x < 8; x++) {
+		if(!(x&1)) printf(" ");
+		for(int y = 0; y < 8; y++) {
+			switch(gs->fds[x+8*y]) {
+				case  0: if(y!=7) printf("0 "); break;
+				case  1:
+				case  2:
+				case  3: printf("%d ", gs->fds[x+8*y]); break;
+				case  5:
+				case  6:
+				case  7: printf("%dB", gs->fds[x+8*y] & 3); break;
+				case  9:
+				case 10:
+				case 11: printf("%dR", gs->fds[x+8*y] & 3); break;
+				default: break;
+			}
 		}
+		printf("\n");
 	}
+	printf("turn #%d\n", gs->trn);
 }
 
-void print_move(move m) {
+char* sprint_move(move m) {
+	char* ret = malloc(64);
 	switch(m.t) {
-		case Null: printf("N\n"); break;
-		case Set: printf("S %d %d\n", (m.to & ~7) >> 3, m.to & 7); break;
-		case Run: printf("R %d %d %d %d\n", (m.from & ~7) >> 3, m.from & 7, (m.to & ~7) >> 3, m.to & 7); break;
-		default: printf("Move not valid! {t:%d, from:%d, to:%d}\n", m.t, m.from, m.to); break;
+		case Null: sprintf(ret, "N\n"); break;
+		case Set: sprintf(ret, "S %d %d\n", (m.to & ~7) >> 3, m.to & 7); break;
+		case Run: sprintf(ret, "R %d %d %d %d\n", (m.from & ~7) >> 3, m.from & 7, (m.to & ~7) >> 3, m.to & 7); break;
+		default: sprintf(ret, "Move not valid! {t:%d, from:%d, to:%d}\n", m.t, m.from, m.to); break;
 	}
+	return ret;
 }

@@ -46,5 +46,3 @@ typedef struct _qr {
 	game_state* gs;
 	struct _qr* nxt;
 } gs_qr;
-
-uint8_t turn = 0;
