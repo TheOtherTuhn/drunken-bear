@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "client.h"
 #include "proto.h"

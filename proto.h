@@ -1,11 +1,11 @@
 int main(int argc, char** argv);
-game_state* spawn_gs(game_state* par);
-void free_gs(game_state* gs, field* save);
-void cur_gs(game_state* gs);
+game_state* spawn_gs(game_state* p);
+void free_gs(game_state* gs, field* save, int turn);
+void set_current_gs(game_state* gs);
 int field_fish(field f);
-int curp(game_state* gs);
-void set_curp(game_state* gs, int p);
-int pens_left(game_state* gs, int p);
+int current_player(game_state* gs);
+void set_current_player(game_state* gs, int p);
+void run_move(game_state* old, game_state* prv, int from, int to);
 void* gen_gs(void* arg);
 game_state* parse_gs(char* in);
 void print_gs(game_state* gs);

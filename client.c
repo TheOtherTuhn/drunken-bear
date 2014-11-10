@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <time.h>
 
 #include "client.h"
 #include "proto.h"
@@ -21,7 +22,7 @@ int main(int argc, char** argv) {
 	while(getline(&line, &size, stdin) != -1) {
 		new_gs = parse_gs(line);
 		qempty();
-		free_gs(curgs.gs, new_gs->fds);
+		free_gs(current_gs.gs, new_gs->fields);
 		qpush(new_gs);
 	}
 	free(new_gs);

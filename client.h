@@ -2,19 +2,26 @@
 #define RPEN 0x08
 #define BPEN 0x04
 #define NPEN 0x00
-#define CPEN(old) 1<<(2+curp(old))
+#define CPEN(old) 1<<(2+current_player(old))
 /* east, northeast, northwest
  * west, southwest, southeast
  * of f
  */
-#define E(f) f+8
-#define NE(f) f+(f&1)?-1:7
-#define NW(f) f+(f&1)?-9:-1
-#define W(f) f-8
-#define SW(f) f+(f&1)?-7:1
-#define SE(f) f+(f&1)?1:9
+#define E(f)  (f+8)
+#define NE(f) (f+(f&1)?-1:7)
+#define NW(f) (f+(f&1)?-9:-1)
+#define W(f)  (f-8)
+#define SW(f) (f+(f&1)?-7:1)
+#define SE(f) (f+(f&1)?1:9)
+#define INBOUNDS(f) ((0<=f)&&(f<64))
 
 #define NTHREADS 8
+
+#ifdef TEST
+#define DBUG(s, ...) fprintf(stderr, s, ##__VA_ARGS__)
+#else
+#define DBUG(s, ...)
+#endif
 
 /* 0b0000ppnn
  * pp - any one of RPEN, BPEN, NPEN, meaning red, blue or no penguin
@@ -24,25 +31,27 @@ typedef uint8_t field;
 typedef enum { Null, Set, Run } move_type;
 
 typedef struct {
-	move_type t;
+	move_type type;
 	uint8_t from, to;
 } move;
 
 typedef struct _gs {
-	field fds[64];
-	uint8_t ptsR, ptsB; /* never greater than 100, highest bit set if
-							current player */
-	uint8_t trn; /* never greater than 30 */
-	uint8_t lft; /* penguins left to be set (R=MSN;B=LSN) */
-	move lmove; /* the move that produced this gs */
-	struct _gs* par; /* parent */
-	struct _gs* nxt; /* next sibling */
-	struct _gs* prv; /* previous sibling */
-	struct _gs* fst; /* first child */
-	struct _gs* lst; /* last child */
+	field fields[64];
+	uint8_t pointsR, pointsB; /* never greater than 100, highest bit set if
+								current player */
+	uint8_t turn; /* never greater than 30 */
+	uint8_t leftR:4; /* penguins left to be set (R=high nibble;B=low nibble) */
+	uint8_t leftB:4;
+	move last_move; /* the move that produced this gs */
+	struct _gs* parent; /* parent */
+	struct _gs* next; /* next sibling */
+	struct _gs* previous; /* previous sibling */
+	struct _gs* first; /* first child */
+	struct _gs* last; /* last child */
 } game_state;
 
+/* standing in the q */
 typedef struct _qr {
 	game_state* gs;
-	struct _qr* nxt;
+	struct _qr* next;
 } gs_qr;
