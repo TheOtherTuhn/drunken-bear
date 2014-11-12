@@ -1,7 +1,7 @@
 struct {
-	gs_qr* first;
+	gs_qr* first, *last;
 	pthread_mutex_t m;
-} gs_q = {NULL, PTHREAD_MUTEX_INITIALIZER};
+} gs_q = {NULL, NULL, PTHREAD_MUTEX_INITIALIZER};
 
 game_state* qpop(void) {
 	if(!gs_q.first) /* q is empty */
@@ -18,15 +18,13 @@ game_state* qpop(void) {
 void qpush(game_state* gs) {
 	pthread_mutex_lock(&gs_q.m);
 		if(gs_q.first) {
-			gs_qr* cur = gs_q.first;
-			while(cur->next) { /* advance to the last qr */
-				cur = cur->next;
-			}
-			cur->next = malloc(sizeof(gs_qr));
-			cur->next->gs = gs;
+			gs_q.last->next = malloc(sizeof(gs_qr));
+			gs_q.last->next->gs = gs;
+			gs_q.last = gs_q.last->next;
 		} else { /* q is empty */
 			gs_q.first = malloc(sizeof(gs_qr));
 			gs_q.first->gs = gs;
+			gs_q.last = gs_q.first;
 		}
 	pthread_mutex_unlock(&gs_q.m);
 }

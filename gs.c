@@ -62,36 +62,37 @@ void set_current_player(game_state* gs, int p) {
 	}
 }
 
-void run_move(game_state* old, game_state* prv, int from, int to) {
-	game_state* new = spawn_gs(old);
-	prv->next = new;
-	new->previous = prv;
-	/* R current player? */
-	if(old->pointsR > 0x80)
-	/* add points */
-		new->pointsR += old->fields[from] & 3;
-	else /* B current player */
-		new->pointsB += old->fields[from] & 3;
-	new->fields[from] = 0; /* move penguin from here ... */
-	new->fields[to] |= CPEN(old); /* ...to here */
-	new->last_move = (move) {Run, from, to};
-	qpush(new);
-	prv = new;
-}
+#define RUN_MOVE(old, prv, from, to) \
+do{ \
+	game_state* new = spawn_gs(old);\
+	prv->next = new;\
+	new->previous = prv;\
+	if(old->pointsR > 0x80)\
+		new->pointsR += field_fish(old->fields[from]);\
+	else \
+		new->pointsB += field_fish(old->fields[from]); \
+	new->fields[from] = 0; \
+	new->fields[to] |= CPEN(old); \
+	new->last_move = (move) {Run, from, to}; \
+	qpush(new); \
+	prv = new; \
+}while(0);
 
 /* should be the thread, only concept for now */
 void* gen_gs(void* arg) {
-	game_state* old, *prv;
+	game_state* old, *prv = NULL;
 	int n = 0;
 	#ifdef TEST
-	//while(1) {
-		// /* only two depths */
-		//if(!(old = qpop()) || old->turn - turn >= 2) {
-			//usleep(200);
-			//continue;
-		//}
-	{
-		old = qpop();
+	while(1) {
+		/* only two depths */
+		if(!(old = qpop())) {
+			/*usleep(200);*/
+			break;
+		}
+		if(old->turn - turn >= 3)
+			continue;
+	/*{
+		old = qpop();*/
 	#else
 	while(1) {
 		if(!(old = qpop()) || old->turn >= 30) {
@@ -99,19 +100,14 @@ void* gen_gs(void* arg) {
 			continue;
 		}
 	#endif
-		/* NullMove */
-		DBUG("Generating NullMove...");
-		prv = spawn_gs(old);
-		prv->last_move = (move) {Null, 0, 0};
-		qpush(prv);
-		DBUG("Done\n");
 		/* SetMove */
-		if(current_player(old)?old->leftR:old->leftB) {
-		DBUG("Generating SetMoves...\n");
+		if(old->turn <= 8) {
+			DBUG("Generating SetMoves...\n");
 			for(int i=0; i<64;i++) {
 				if((old->fields[i] & 12) == NPEN && field_fish(old->fields[i]) == 1) {
 					DBUG("SetMove #%d:\n", n++);
 					game_state* new = spawn_gs(old);
+					if(n==1) old->first = new;
 					prv->next = new;
 					new->previous = prv;
 					/* remove penguin */
@@ -127,38 +123,55 @@ void* gen_gs(void* arg) {
 					fprintf(stderr,"%s",sprint_move(new->last_move));
 				}
 			}
-		DBUG("Done\n");
+			DBUG("Done\n");
 		} else {
+		/* NullMove */
+			DBUG("Generating NullMove...");
+			prv = spawn_gs(old);
+			prv->last_move = (move) {Null, 0, 0};
+			old->first = prv;
+			qpush(prv);
+			DBUG("Done\n");
 		/* RunMove */
+			DBUG("Generating SetMoves...\n");
 			for(int i=0; i < 64; i++) {
 				if((old->fields[i] & 12) == CPEN(old)) {
-					for(int j=i; INBOUNDS(j) && field_fish(old->fields[j])
+					DBUG(" ");
+					for(int j=E(i); INBOUNDS(j) && field_fish(old->fields[j])
 								&& (old->fields[j] & 12) == NPEN; j=E(j)) {
-						run_move(old, prv, i, j);
+					DBUG("e,");
+						RUN_MOVE(old, prv, i, j);
 					}
-					for(int j=i; INBOUNDS(j) && field_fish(old->fields[j])
+					for(int j=NE(i); INBOUNDS(j) && field_fish(old->fields[j])
 								&& (old->fields[j] & 12) == NPEN; j=NE(j)){
-						run_move(old, prv, i, j);
+					DBUG("ne,");
+						RUN_MOVE(old, prv, i, j);
 					}
-					for(int j=i; INBOUNDS(j) && field_fish(old->fields[j])
+					for(int j=NW(i); INBOUNDS(j) && field_fish(old->fields[j])
 								&& (old->fields[j] & 12) == NPEN; j=NW(j)){
-						run_move(old, prv, i, j);
+					DBUG("nw,");
+						RUN_MOVE(old, prv, i, j);
 					}
-					for(int j=i; INBOUNDS(j) && field_fish(old->fields[j])
+					DBUG("w,");
+					for(int j=W(i); INBOUNDS(j) && field_fish(old->fields[j])
 								&& (old->fields[j] & 12) == NPEN; j=W(j)) {
-						run_move(old, prv, i, j);
+						RUN_MOVE(old, prv, i, j);
 					}
-					for(int j=i; INBOUNDS(j) && field_fish(old->fields[j])
+					DBUG("sw,");
+					for(int j=SW(i); INBOUNDS(j) && field_fish(old->fields[j])
 								&& (old->fields[j] & 12) == NPEN; j=SW(j)){
-						run_move(old, prv, i, j);
+						RUN_MOVE(old, prv, i, j);
 					}
-					for(int j=i; INBOUNDS(j) && field_fish(old->fields[j])
+					DBUG("se\n");
+					for(int j=SE(i); INBOUNDS(j) && field_fish(old->fields[j])
 								&& (old->fields[j] & 12) == NPEN; j=SE(j)){
-						run_move(old, prv, i, j);
+						RUN_MOVE(old, prv, i, j);
 					}
 				}
 			}
+			DBUG("Done\n");
 		}
+		prv->parent->last = prv;
 	}
 	return NULL;
 }
@@ -221,4 +234,13 @@ char* sprint_move(move m) {
 		default: sprintf(ret, "Move not valid! {type:%d, from:%d, to:%d}\n", m.type, m.from, m.to); break;
 	}
 	return ret;
+}
+
+void print_moves(game_state* gs, int d) {
+	if(!gs) return;
+	for(int i=d;i>1;i--) DBUG(" |");
+	if(d>0)DBUG(" L ");
+	DBUG("%s", sprint_move(gs->last_move));
+	print_moves(gs->first, d+1);
+	print_moves(gs->next, d);
 }
