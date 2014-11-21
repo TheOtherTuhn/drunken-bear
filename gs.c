@@ -15,8 +15,10 @@ game_state* spawn_gs(game_state* p) {
 	new->parent = p;
 	new->turn = p->turn+1;
 	/* It's the other players turn unless the last penguin has just been set */
-	new->pointsR = p->pointsR ^ ((p->turn != 8)<<7);
-	new->pointsB = p->pointsB ^ ((p->turn != 8)<<7);
+	if(new->turn != 8) {
+		new->r_current = !p->r_current;
+		new->b_current = !p->b_current;
+	}
 	return new;
 }
 
@@ -43,42 +45,32 @@ void set_current_gs(game_state* gs) {
 	pthread_mutex_unlock(&current_gs.m);
 }
 
-int field_fish(field f) {
-	return f & 3;
-}
-
 /* 0=B,1=R */
 int current_player(game_state* gs) {
-	return (gs->pointsR & (1<<7)) >> 7;
+	return gs->r_current;
 }
 
 void set_current_player(game_state* gs, int p) {
-	if(p) {
-		gs->pointsR |= 1<<7;
-		gs->pointsB &= ~(1<<7);
-	} else {
-		gs->pointsB |= 1<<7;
-		gs->pointsR &= ~(1<<7);
-	}
+	gs->r_current = p;
+	gs->b_current =!p;
 }
 
-#define RUN_MOVE(old, prv, from, to) \
-do{ \
-	game_state* new = spawn_gs(old);\
-	prv->next = new;\
-	new->previous = prv;\
-	if(old->pointsR > 0x80)\
-		new->pointsR += field_fish(old->fields[from]);\
-	else \
-		new->pointsB += field_fish(old->fields[from]); \
-	new->fields[from] = 0; \
-	new->fields[to] |= CPEN(old); \
-	new->last_move = (move) {Run, from, to}; \
-	qpush(new); \
-	prv = new; \
-}while(0);
+void run_move(game_state* old, game_state** prv, int from, int to) {
+	game_state* new = spawn_gs(old);
+	(*prv)->next = new;
+	new->previous = *prv;
+	if(old->r_current)
+		new->pointsR += old->fields[from].fish;
+	else
+		new->pointsB += old->fields[from].fish;
+	new->fields[from].fish = new->fields[from].rpen = new->fields[from].bpen = 0;
+	new->fields[to].rpen = old->r_current;
+	new->fields[to].bpen = old->b_current;
+	new->last_move = (move) {Run, from, to};
+	qpush(new);
+	*prv = new;
+}
 
-/* should be the thread, only concept for now */
 void* gen_gs(void* arg) {
 	game_state* old, *prv = NULL;
 	int n = 0;
@@ -104,23 +96,25 @@ void* gen_gs(void* arg) {
 		if(old->turn <= 8) {
 			DBUG("Generating SetMoves...\n");
 			for(int i=0; i<64;i++) {
-				if((old->fields[i] & 12) == NPEN && field_fish(old->fields[i]) == 1) {
+				if(old->fields[i].rpen == old->fields[i].bpen \
+				&& old->fields[i].fish == 1) {
 					DBUG("SetMove #%d:\n", n++);
 					game_state* new = spawn_gs(old);
-					if(n==1) old->first = new;
+					if(n++==0) old->first = new;
 					prv->next = new;
 					new->previous = prv;
 					/* remove penguin */
-					if(current_player(old))
+					if(old->r_current)
 						new->leftR--;
 					else
 						new->leftB--;
 					/* set penguin */
-					new->fields[i] |= CPEN(old);
+					new->fields[i].rpen = old->r_current;
+					new->fields[i].bpen = old->b_current;
 					new->last_move = (move) {Set, 0, i};
 					qpush(new);
 					prv = new;
-					fprintf(stderr,"%s",sprint_move(new->last_move));
+					DBUG("%s",sprint_move(new->last_move));
 				}
 			}
 			DBUG("Done\n");
@@ -135,37 +129,37 @@ void* gen_gs(void* arg) {
 		/* RunMove */
 			DBUG("Generating SetMoves...\n");
 			for(int i=0; i < 64; i++) {
-				if((old->fields[i] & 12) == CPEN(old)) {
-					DBUG(" ");
-					for(int j=E(i); INBOUNDS(j) && field_fish(old->fields[j])
-								&& (old->fields[j] & 12) == NPEN; j=E(j)) {
-					DBUG("e,");
-						RUN_MOVE(old, prv, i, j);
+				if((old->fields[i].rpen && old->r_current) \
+				|| (old->fields[i].bpen && old->b_current)) {
+					for(int j=E(i); INBOUNDS(j) \
+						&& old->fields[j].fish \
+						&& old->fields[j].rpen == old->fields[j].bpen; j=E(j)) {
+						run_move(old, &prv, i, j);
 					}
-					for(int j=NE(i); INBOUNDS(j) && field_fish(old->fields[j])
-								&& (old->fields[j] & 12) == NPEN; j=NE(j)){
-					DBUG("ne,");
-						RUN_MOVE(old, prv, i, j);
+					for(int j=NE(i); INBOUNDS(j) \
+						&& old->fields[j].fish \
+						&& old->fields[j].rpen == old->fields[j].bpen; j=NE(j)){
+						run_move(old, &prv, i, j);
 					}
-					for(int j=NW(i); INBOUNDS(j) && field_fish(old->fields[j])
-								&& (old->fields[j] & 12) == NPEN; j=NW(j)){
-					DBUG("nw,");
-						RUN_MOVE(old, prv, i, j);
+					for(int j=NW(i); INBOUNDS(j) \
+						&& old->fields[j].fish \
+						&& old->fields[j].rpen == old->fields[j].bpen; j=NW(j)){
+						run_move(old, &prv, i, j);
 					}
-					DBUG("w,");
-					for(int j=W(i); INBOUNDS(j) && field_fish(old->fields[j])
-								&& (old->fields[j] & 12) == NPEN; j=W(j)) {
-						RUN_MOVE(old, prv, i, j);
+					for(int j=W(i); INBOUNDS(j) \
+						&& old->fields[j].fish \
+						&& old->fields[j].rpen == old->fields[j].bpen; j=W(j)) {
+						run_move(old, &prv, i, j);
 					}
-					DBUG("sw,");
-					for(int j=SW(i); INBOUNDS(j) && field_fish(old->fields[j])
-								&& (old->fields[j] & 12) == NPEN; j=SW(j)){
-						RUN_MOVE(old, prv, i, j);
+					for(int j=SW(i); INBOUNDS(j) \
+						&& old->fields[j].fish \
+						&& old->fields[j].rpen == old->fields[j].bpen; j=SW(j)){
+						run_move(old, &prv, i, j);
 					}
-					DBUG("se\n");
-					for(int j=SE(i); INBOUNDS(j) && field_fish(old->fields[j])
-								&& (old->fields[j] & 12) == NPEN; j=SE(j)){
-						RUN_MOVE(old, prv, i, j);
+					for(int j=SE(i); INBOUNDS(j) \
+						&& old->fields[j].fish \
+						&& old->fields[j].rpen == old->fields[j].bpen; j=SE(j)){
+						run_move(old, &prv, i, j);
 					}
 				}
 			}
@@ -185,44 +179,33 @@ game_state* parse_gs(char* in) {
 		if(ch > 'A') {
 			if(f >= 0) {
 				if(ch=='R') {
-					new->fields[f] |= RPEN;
+					new->fields[f].rpen = 1;
 					new->leftR--;
 				} else {
-					new->fields[f] |= BPEN;
+					new->fields[f].bpen = 1;
 					new->leftB--;
 				}
 			} else
 				set_current_player(new, (ch=='R'));
 		} else
-			new->fields[++f] = ch - 0x30;
+			new->fields[++f].fish = ch - '0';
 	}
 	new->turn = ++turn;
 	return new;
 }
 
 void print_gs(game_state* gs) {
-	printf(" R:%d/%d%s\tB:%d/%d%s\n\n", gs->pointsR & ~(1<<7), gs->leftR, (gs->pointsR & 0x80)?"*":" ",
-										gs->pointsB & ~(1<<7), gs->leftB, (gs->pointsB & 0x80)?"*":" ");
+	printf(" R:%d/%d%c\tB:%d/%d%c\n", gs->pointsR, gs->leftR, gs->r_current?'*':' '\
+					  , gs->pointsB, gs->leftB, gs->b_current?'*':' ');
+	printf("turn #%d\n", gs->turn);
 	for(int x = 0; x < 8; x++) {
 		if(!(x&1)) printf(" ");
 		for(int y = 0; y < 8; y++) {
-			switch(gs->fields[x+8*y]) {
-				case  0: if(y!=7) printf("0 "); break;
-				case  1:
-				case  2:
-				case  3: printf("%d ", gs->fields[x+8*y]); break;
-				case  5:
-				case  6:
-				case  7: printf("%dB", gs->fields[x+8*y] & 3); break;
-				case  9:
-				case 10:
-				case 11: printf("%dR", gs->fields[x+8*y] & 3); break;
-				default: break;
-			}
+			printf("%d%c", gs->fields[x+8*y].fish,
+				gs->fields[x+8*y].rpen ? 'R' : (gs->fields[x+8*y].bpen ? 'B' : ' '));
 		}
 		printf("\n");
 	}
-	printf("turn #%d\n", gs->turn);
 }
 
 char* sprint_move(move m) {

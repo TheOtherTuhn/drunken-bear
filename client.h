@@ -26,7 +26,9 @@
 /* 0b0000ppnn
  * pp - any one of RPEN, BPEN, NPEN, meaning red, blue or no penguin
  * nn - # of fish, zero if no field */
-typedef uint8_t field;
+typedef struct {
+	uint8_t rpen:1,bpen:1,fish:2;
+} field;
 
 typedef enum { Null, Set, Run } move_type;
 
@@ -37,8 +39,8 @@ typedef struct {
 
 typedef struct _gs {
 	field fields[64];
-	uint8_t pointsR, pointsB; /* never greater than 100, highest bit set if
-								current player */
+	uint8_t r_current:1, b_current:1; /* red/blue is current player */
+	uint8_t pointsR:7, pointsB:7;
 	uint8_t turn; /* never greater than 30 */
 	uint8_t leftR:4; /* penguins left to be set (R=high nibble;B=low nibble) */
 	uint8_t leftB:4;
