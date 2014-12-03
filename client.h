@@ -18,9 +18,9 @@
 #define NTHREADS 8
 
 #ifdef TEST
-#define DBUG(s, ...) fprintf(stderr, s, ##__VA_ARGS__)
+# define DBUG(s, ...) fprintf(stderr, "%3d: ", __LINE__); fprintf(stderr, s, ##__VA_ARGS__)
 #else
-#define DBUG(s, ...)
+# define DBUG(s, ...)
 #endif
 
 /* 0b0000ppnn
@@ -30,7 +30,7 @@ typedef struct {
 	uint8_t rpen:1,bpen:1,fish:2;
 } field;
 
-typedef enum { Null, Set, Run } move_type;
+typedef enum { Null = 1, Set, Run } move_type;
 
 typedef struct {
 	move_type type;

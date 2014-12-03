@@ -12,9 +12,6 @@ test1:
 test2:
 	$(CC) -o client-test test2.c $(CFLAGS) -DTEST $(LDADD) $(LDFLAGS)
 
-proto: gs.c q.c client.c
-	cat *.c | egrep '^(void|int|char|unsigned|game_state)' | sed -r 's/\) \{/);/' > proto.h
-
 all: proto normal debug
 
 clean:

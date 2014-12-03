@@ -1,8 +1,7 @@
 struct {
 	game_state* gs;
 	int we_are_red; /* to be read from session.id */
-	pthread_mutex_t m;
-} current_gs = {NULL,-1,PTHREAD_MUTEX_INITIALIZER};
+} current_gs = {NULL,-1};
 
 uint8_t turn = 0;
 
@@ -22,27 +21,43 @@ game_state* spawn_gs(game_state* p) {
 	return new;
 }
 
-/* delete all gamestates unless the fields and the turn# are equivalent */
-void free_gs(game_state* gs, field* save, int turn) {
-	/* NULLcheck */
-	if(!gs)
-		return;
-	free_gs(gs->next, save, turn);
-	if(memcmp(gs->fields, save, 64 * sizeof(field)) || gs->turn!=turn) {
-		free_gs(gs->first, save, turn);
-		free(gs);
-	} else {
-		gs->next=NULL;
-		gs->previous=NULL;
-		set_current_gs(gs);
+/* delete all gamestates unless the last move is the one actually played
+ * and set the current gamestate to that one */
+void update_current_gs(game_state* gs, move save) {
+	game_state *child = gs->first;
+	while(child) {
+		if(child->last_move != save) {
+			free_branch(child->first);
+			child = child->next;
+			free(child->prv);
+		} else {
+			child->previous = NULL;
+			current_gs.gs = child;
+			child = child->next;
+			child->previous->next = NULL;
+		}
 	}
+	free(gs);
 }
 
-void set_current_gs(game_state* gs) {
-	pthread_mutex_lock(&current_gs.m);
-		gs->parent = NULL;
-		current_gs.gs = gs;
-	pthread_mutex_unlock(&current_gs.m);
+void free_branch(game_state *branch) {
+	if(!branch)
+		return;
+	free_branch(branch->next);
+	free_branch(branch->first);
+	free(branch);
+}
+
+/* push all leaves of current_gs into q */
+void push_leaves(game_state *gs)
+{
+	if(!gs)
+		return;
+	if(!gs->first) {
+		qpush(gs);
+	}
+	push_leaves(gs->first);
+	push_leaves(gs->next);
 }
 
 /* 0=B,1=R */
@@ -81,7 +96,7 @@ void* gen_gs(void* arg) {
 			/*usleep(200);*/
 			break;
 		}
-		if(old->turn - turn >= 3)
+		if(old->turn - turn >= 4)
 			continue;
 	/*{
 		old = qpop();*/
@@ -168,30 +183,6 @@ void* gen_gs(void* arg) {
 		prv->parent->last = prv;
 	}
 	return NULL;
-}
-
-game_state* parse_gs(char* in) {
-	int ch, f = -1;
-	game_state* new = malloc(sizeof(game_state));
-	new->leftB = 4;
-	new->leftR = 4;
-	for(int i=0; (ch = in[i]); i++) {
-		if(ch > 'A') {
-			if(f >= 0) {
-				if(ch=='R') {
-					new->fields[f].rpen = 1;
-					new->leftR--;
-				} else {
-					new->fields[f].bpen = 1;
-					new->leftB--;
-				}
-			} else
-				set_current_player(new, (ch=='R'));
-		} else
-			new->fields[++f].fish = ch - '0';
-	}
-	new->turn = ++turn;
-	return new;
 }
 
 void print_gs(game_state* gs) {
