@@ -1,10 +1,10 @@
 /* client.c */
 int main(int argc, char** argv);
-int parseline(char** line);
-int nfromc(char c);
+int parseline(move *last_move);
+uint8_t nfromc(char c);
 /* gs.c */
 game_state* spawn_gs(game_state* p);
-void update_current_gs(game_state* gs, field* save, int turn);
+void update_current_gs(game_state* gs, move save);
 void free_branch(game_state *gs);
 void push_leaves(game_state *gs);
 int field_fish(field f);

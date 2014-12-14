@@ -26,10 +26,10 @@ game_state* spawn_gs(game_state* p) {
 void update_current_gs(game_state* gs, move save) {
 	game_state *child = gs->first;
 	while(child) {
-		if(child->last_move != save) {
+		if(!memcmp(&child->last_move, &save, sizeof(move))) {
 			free_branch(child->first);
 			child = child->next;
-			free(child->prv);
+			free(child->previous);
 		} else {
 			child->previous = NULL;
 			current_gs.gs = child;
@@ -89,24 +89,11 @@ void run_move(game_state* old, game_state** prv, int from, int to) {
 void* gen_gs(void* arg) {
 	game_state* old, *prv = NULL;
 	int n = 0;
-	#ifdef TEST
-	while(1) {
-		/* only two depths */
-		if(!(old = qpop())) {
-			/*usleep(200);*/
-			break;
-		}
-		if(old->turn - turn >= 4)
-			continue;
-	/*{
-		old = qpop();*/
-	#else
 	while(1) {
 		if(!(old = qpop()) || old->turn >= 30) {
 			usleep(200);
 			continue;
 		}
-	#endif
 		/* SetMove */
 		if(old->turn <= 8) {
 			DBUG("Generating SetMoves...\n");
@@ -199,12 +186,30 @@ void print_gs(game_state* gs) {
 	}
 }
 
+int move_to_x(move m)
+{
+    return (m.to & (7<<3))>>3;
+}
+int move_to_y(move m)
+{
+    return m.to & 7;
+}
+int move_from_x(move m)
+{
+    return (m.from & (7<<3))>>3;
+}
+int move_from_y(move m)
+{
+    return m.from & 7;
+}
+
 char* sprint_move(move m) {
 	char* ret = malloc(64);
 	switch(m.type) {
 		case Null: sprintf(ret, "N\n"); break;
-		case Set: sprintf(ret, "S %d %d\n", (m.to & ~7) >> 3, m.to & 7); break;
-		case Run: sprintf(ret, "R %d %d %d %d\n", (m.from & ~7) >> 3, m.from & 7, (m.to & ~7) >> 3, m.to & 7); break;
+		case Set: sprintf(ret, "S %d %d\n", move_to_x(m), move_to_y(m)); break;
+		case Run: sprintf(ret, "R %d %d %d %d\n", move_from_x(m), move_from_y(m),
+                          move_to_x(m), move_to_y(m)); break;
 		default: sprintf(ret, "Move not valid! {type:%d, from:%d, to:%d}\n", m.type, m.from, m.to); break;
 	}
 	return ret;

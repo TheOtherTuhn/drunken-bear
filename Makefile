@@ -1,4 +1,4 @@
-CFLAGS?=-Wall -Werror -Os -std=c99 -D_GNU_SOURCE
+CFLAGS?=-Wall -D TEST -Werror -std=c99 -D_GNU_SOURCE
 LDADD?=-pthread
 
 normal:
