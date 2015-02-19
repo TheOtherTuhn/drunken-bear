@@ -1,18 +1,21 @@
-CFLAGS?=-Wall -D TEST -Werror -std=c99 -D_GNU_SOURCE
-LDADD?=-pthread
+ Declaration of variables
+ CC = cc 
+ CC_FLAGS = -Wall -Werror -std=c99 -D_GNU_SOURCE
+ LDADD?=-pthread
 
-normal:
-	$(CC) -o client client.c $(CFLAGS) $(LDADD) $(LDFLAGS)
+ # File names
+ EXEC = run
+ SOURCES = $(wildcard *.c)
+ OBJECTS = $(SOURCES:.c=.o)
 
-debug:
-	$(CC) -o client-debug client.c $(CFLAGS) -g -DDEBUG $(LDADD)
+ # Main target
+ $(EXEC): $(OBJECTS)
+ $(CC) $(OBJECTS) -o $(EXEC)
 
-test1:
-	$(CC) -o client-test test1.c $(CFLAGS) -DTEST $(LDADD) $(LDFLAGS)
-test2:
-	$(CC) -o client-test test2.c $(CFLAGS) -DTEST $(LDADD) $(LDFLAGS)
+ # To obtain object files
+ %.o: %.c
+ $(CC) -c $(CC_FLAGS) $< -o $@
 
-all: proto normal debug
-
-clean:
-	rm -f client client-debug
+ # To remove generated files
+ clean:
+ rm -f $(EXEC) $(OBJECTS)

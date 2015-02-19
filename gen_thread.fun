@@ -1,0 +1,1 @@
+/*c function to generate moves*/
