@@ -15,10 +15,12 @@ void qpush(game_state *gs)
     pthread_mutex_lock(&gs_q.m);
         if(gs_q.first) {
             gs_q.last->next = malloc(sizeof(gs_qr));
+            gs_q.last->next = NULL;
             gs_q.last->next->gs = gs;
             gs_q.last = gs_q.last->next;
         } else {
             gs_q.first = malloc(sizeof(gs_qr));
+            gs_q.first->next = NULL;
             gs_q.first->gs = gs;
             gs_q.last = gs_q.first;
         }
