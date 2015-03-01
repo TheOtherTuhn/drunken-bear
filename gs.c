@@ -7,7 +7,7 @@ void init_game_state(game_state *gs) {
     gs->pointsB = gs->pointsR = 0;
     gs->turn = 0;
     gs->leftB = gs->leftR = 4;
-    gs->last_move = (move){Null, 0, 0};
+    gs->last_move = (move){0, 0, 0};
     gs->parent = NULL;
     gs->next = gs->previous = NULL;
     gs->first = gs->last = NULL;

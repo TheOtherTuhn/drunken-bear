@@ -97,6 +97,26 @@ end:
 
 #include "gen_thread.fun"
 
+game_state *minmax(game_state *gs)
+{
+    if(!gs->first) {
+        gs->rating = rate_gs(gs);
+        return gs;
+    }
+    game_state *best_gs;
+    int best_rating = (current_gs.we_are_red && gs->r_current)? INT_MAX : INT_MIN; 
+    while((cur = cur->next)) {
+        if(current_gs.we_are_red && gs->r_current) {
+            best_rating = (best_rating < cur->rating)? cur->rating : best_rating;
+            best_gs = cur;
+        } else {
+            best_rating = (best_rating > cur->rating)? cur->rating : best_rating;
+            best_gs = cur;
+        }
+    }
+    return best_gs;
+}
+
 void fprint_tree(game_state *gs, int d)
 {
     if(!gs) return;
