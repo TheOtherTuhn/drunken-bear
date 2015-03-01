@@ -1,4 +1,13 @@
+#ifndef __GS_H__
+#define __GS_H__
 /*Defines types to store game data*/
+#include <stdint.h>
+#include <malloc.h>
+#include <stdio.h>
+#include <string.h>
+#include "move.h"
+#define PLAYER_RED 1
+#define PLAYER_BLUE 0
 
 typedef struct {
     uint8_t rpen:1, bpen:1, fish:2;
@@ -29,6 +38,6 @@ void set_current_player(game_state*, int);
 int rate_gs(game_state*);
 game_state *simulate_set_move(game_state*, game_state*, int); 
 game_state *simulate_run_move(game_state*, game_state*, int, int);
-void* gen_gs(void*);
 /* about 170bytes */
 int sprint_game_state(char*, game_state*);
+#endif

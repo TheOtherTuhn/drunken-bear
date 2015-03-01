@@ -22,25 +22,25 @@ int get_from_y_move(move m)
 
 int sprint_move(char *str, move m)
 {
-    char t = '';
+    char t = 'X';
     switch(m.type) {
         case Null: t = 'N'; break;
         case Set:  t = 'S'; break;
         case Run:  t = 'R'; break;
         default:   t = 'X'; break;
     }
-    return sprintf(str, "%c: %d %d", t, m.from, m.to);
+    return sprintf(str, "%c: (%d %d), (%d %d)", t, get_from_x_move(m), get_from_y_move(m), get_to_x_move(m), get_to_y_move(m));
 }
 
-int sprint_move_xml(char *str, move m);
+int sprint_move_xml(char *str, move m, char *sid)
 {
     int n;
-    n = sprintf(str, "<room roomId=\"%s\">\n", current_gs.sid);
+    n = sprintf(str, "<room roomId=\"%s\">\n", sid);
 	switch(m.type) {
 		case Null: n += sprintf(str+n, "<data class=\"NullMove\"/>\n"); break;
-		case Set: n += sprintf(str+n, "<data class=\"SetMove\" setX=\"%d\" setY=\"%d\"/>\n", move_to_x(m), move_to_y(m)); break;
-		case Run: n += sprintf(str+n, "<data class=\"RunMove\" fromX=\"%d\" fromY=\"%d\" toX=\"%d\" toY=\"%d\"/>\n", move_from_x(m), move_from_y(m),
-                          move_to_x(m), move_to_y(m)); break;
+		case Set: n += sprintf(str+n, "<data class=\"SetMove\" setX=\"%d\" setY=\"%d\"/>\n", get_to_x_move(m), get_to_y_move(m)); break;
+		case Run: n += sprintf(str+n, "<data class=\"RunMove\" fromX=\"%d\" fromY=\"%d\" toX=\"%d\" toY=\"%d\"/>\n", get_from_x_move(m), get_from_y_move(m),
+                          get_to_x_move(m), get_to_y_move(m)); break;
 		default: n += sprintf(str+n, "Move not valid! {type:%d, from:%d, to:%d}\n", m.type, m.from, m.to); break;
 	}
     n += sprintf(str+n, "</room>\n");

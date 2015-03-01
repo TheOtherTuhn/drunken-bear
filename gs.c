@@ -1,5 +1,4 @@
 #include "gs.h"
-#include "move.h"
 
 game_state *spawn_gs(game_state *p)
 {
@@ -57,7 +56,7 @@ game_state *simulate_run_move(game_state *par, game_state *prv, int from, int to
     prv->next = new;
     new->previous = prv;
     if(get_current_player(new) == PLAYER_RED) {
-        new->pointsR += old->fields[from].fish;
+        new->pointsR += par->fields[from].fish;
         new->fields[to].rpen = 1;
     } else {
         new->pointsB += new->fields[from].fish;
@@ -65,9 +64,8 @@ game_state *simulate_run_move(game_state *par, game_state *prv, int from, int to
     }
     new->fields[from] = (field) {0, 0, 0};
     new->last_move = (move) {Run, from, to};
+    return new;
 }
-
-#include "gen_thread.fun"
 
 int sprint_game_state(char *str, game_state *gs)
 {
