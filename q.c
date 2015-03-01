@@ -1,4 +1,5 @@
 #include "q.h"
+#include "client.h"
 
 typedef struct _qr {
     game_state *gs;
@@ -15,7 +16,7 @@ void qpush(game_state *gs)
     pthread_mutex_lock(&gs_q.m);
         if(gs_q.first) {
             gs_q.last->next = malloc(sizeof(gs_qr));
-            gs_q.last->next = NULL;
+            gs_q.last->next->next = NULL;
             gs_q.last->next->gs = gs;
             gs_q.last = gs_q.last->next;
         } else {

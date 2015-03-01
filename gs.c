@@ -16,6 +16,7 @@ void init_game_state(game_state *gs) {
 game_state *spawn_gs(game_state *p)
 {
     game_state *new = malloc(sizeof(game_state));
+    init_game_state(new);
     memcpy(new->fields, p->fields, 64 * sizeof(field));
     new->parent = p;
     new->turn = p->turn+1;

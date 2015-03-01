@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     pthread_create(thread, NULL, &gen_gs, NULL);
     sleep(2);
     pthread_cancel(*thread);
-//    fprint_tree(current_gs.gs, 0);
+    fprint_tree(current_gs.gs, 0);
     return 0;
 }
 
