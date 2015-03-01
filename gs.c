@@ -1,8 +1,22 @@
 #include "gs.h"
 
+void init_game_state(game_state *gs) {
+    for(int i = 0; i < 64; gs->fields[i++] = (field){0,0,0});
+    gs->rating = 0;
+    gs->r_current = gs->b_current = 0;
+    gs->pointsB = gs->pointsR = 0;
+    gs->turn = 0;
+    gs->leftB = gs->leftR = 4;
+    gs->last_move = (move){Null, 0, 0};
+    gs->parent = NULL;
+    gs->next = gs->previous = NULL;
+    gs->first = gs->last = NULL;
+}
+
 game_state *spawn_gs(game_state *p)
 {
     game_state *new = malloc(sizeof(game_state));
+    init_game_state(new);
     memcpy(new->fields, p->fields, 64 * sizeof(field));
     new->parent = p;
     new->turn = p->turn+1;

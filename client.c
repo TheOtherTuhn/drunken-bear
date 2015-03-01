@@ -10,6 +10,8 @@ struct {
 int main(int argc, char *argv[])
 {
     move *last_move = malloc(sizeof(move));
+    last_move->type = Null;
+    last_move->from = last_move-> to = 0;
     char *emil = malloc(256);
     parseline(last_move);
     sprint_game_state(emil, current_gs.gs);
@@ -20,7 +22,7 @@ int main(int argc, char *argv[])
     pthread_create(thread, NULL, &gen_gs, NULL);
     sleep(2);
     pthread_cancel(*thread);
-//    fprint_tree(current_gs.gs, 0);
+    fprint_tree(current_gs.gs, 0);
     return 0;
 }
 
@@ -32,6 +34,7 @@ uint8_t nfromc(char c)
 void parse_first_gs(void)
 {
     current_gs.gs = malloc(sizeof(game_state));
+    init_game_state(current_gs.gs);
     size_t size = BUFSIZE;
     char *input = malloc(size);
     char *found;

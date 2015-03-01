@@ -28,6 +28,7 @@ typedef struct _gs {
     struct _gs *first, *last; /*children*/
 } game_state;
 
+void init_game_state(game_state*);
 /*Simulates a NullMove
  * -> Advances the game*/
 game_state *spawn_gs(game_state*);
