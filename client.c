@@ -22,7 +22,10 @@ int main(int argc, char *argv[])
     pthread_create(thread, NULL, &gen_gs, NULL);
     sleep(2);
     pthread_cancel(*thread);
-    fprint_tree(current_gs.gs, 0);
+    //fprint_tree(current_gs.gs, 0);
+    char buf[170];
+    sprint_game_state(buf, minmax(current_gs.gs));
+    DBUG("%s", buf);
     return 0;
 }
 
@@ -103,6 +106,7 @@ game_state *minmax(game_state *gs)
         gs->rating = rate_gs(gs);
         return gs;
     }
+    game_state *cur = gs;
     game_state *best_gs;
     int best_rating = (current_gs.we_are_red && gs->r_current)? INT_MAX : INT_MIN; 
     while((cur = cur->next)) {
