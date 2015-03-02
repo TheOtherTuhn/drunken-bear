@@ -17,9 +17,12 @@ game_state *spawn_gs(game_state *p)
 {
     game_state *new = malloc(sizeof(game_state));
     init_game_state(new);
-    memcpy(new->fields, p->fields, 64 * sizeof(field));
+    for(int i = 0; i < 64; i++)
+        new->fields[i] = p->fields[i];
     new->parent = p;
     new->turn = p->turn+1;
+    new->leftR = p->leftR;
+    new->leftB = p->leftB;
     /* It's the other player's turn unless the last penguin has just been set */
     if(new->turn != 8) {
         new->r_current = !p->r_current;
@@ -42,11 +45,13 @@ void set_current_player(game_state *gs, int p)
 
 int rate_gs(game_state *gs)
 {
-    return (long) gs; /* return pointer in hopes of a semirandom number */
+    return get_to_x_move(gs->last_move);
 }
 
 game_state *simulate_set_move(game_state *par, game_state *prv, int f)
 {
+    if(par->leftR == 0 || par->leftB == 0)
+        return NULL;
     game_state *new = spawn_gs(par);
     if(!par->first)
         par->first = new;

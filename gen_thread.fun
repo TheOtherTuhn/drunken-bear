@@ -4,7 +4,7 @@ void *gen_gs(void *arg)
     int i, j;
     game_state *prv, *old, *dummy;
     while(1) {
-        if(!(old = qpop()) || old->turn > 2) {
+        if(!(old = qpop()) || old->turn > 30) {
             usleep(200);
             continue;
         }
@@ -12,13 +12,16 @@ void *gen_gs(void *arg)
             for(i = 0; i < 64; i++) {
                 if(old->fields[i].rpen == old->fields[i].bpen \
                 && old->fields[i].fish == 1) {
-                    dummy = simulate_set_move(old, prv, i);
-                    qpush(dummy);
-                    prv = dummy;
+                    if((old->r_current && old->leftR > 0) \
+                    ||(old->b_current && old->leftB > 0)) {
+                        dummy = simulate_set_move(old, prv, i);
+                        qpush(dummy);
+                        prv = dummy;
+                    }
                 }
             }
             old->last = prv;
-        } else if(0){
+        } else {
             prv = spawn_gs(old);
             prv->last_move = (move) {Null, 0, 0};
             old->first = prv;

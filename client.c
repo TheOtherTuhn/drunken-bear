@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     //fprint_tree(current_gs.gs, 0);
     char buf[170];
     sprint_game_state(buf, minmax(current_gs.gs));
-    DBUG("%s", buf);
+    DBUG("%s\n", buf);
     return 0;
 }
 
@@ -42,6 +42,7 @@ void parse_first_gs(void)
     char *input = malloc(size);
     char *found;
     int f = 0;
+    current_gs.gs->leftR = current_gs.gs->leftB = 4;
     while(getdelim(&input, &size,'>', stdin) != -1 && f < 64) {
         if((found = strstr(input, "roomId=\""))) {
             memcpy(current_gs.sid, found+8, 36);
@@ -106,16 +107,15 @@ game_state *minmax(game_state *gs)
         gs->rating = rate_gs(gs);
         return gs;
     }
-    game_state *cur = gs;
-    game_state *best_gs;
-    int best_rating = (current_gs.we_are_red && gs->r_current)? INT_MAX : INT_MIN; 
+    game_state *cur = gs->first;
+    game_state *best_gs = malloc(sizeof(game_state));
+    init_game_state(best_gs);
+    best_gs->rating = (current_gs.we_are_red && gs->r_current)? INT_MIN : INT_MAX; 
     while((cur = cur->next)) {
         if(current_gs.we_are_red && gs->r_current) {
-            best_rating = (best_rating < cur->rating)? cur->rating : best_rating;
-            best_gs = cur;
+            best_gs = (best_gs->rating < minmax(cur)->rating)? cur : best_gs;
         } else {
-            best_rating = (best_rating > cur->rating)? cur->rating : best_rating;
-            best_gs = cur;
+            best_gs = (best_gs->rating > minmax(cur)->rating)? cur : best_gs;
         }
     }
     return best_gs;
@@ -124,12 +124,12 @@ game_state *minmax(game_state *gs)
 void fprint_tree(game_state *gs, int d)
 {
     if(!gs) return;
-    int i;
-    char *emil = malloc(8);
-    for(i = d; i > 1; i--) DBUG(" |");
-    if(d > 0) DBUG(" L");
-    sprint_move(emil, gs->last_move);
-    DBUG(" %s\n", emil);
+//    int i;
+    char *emil = malloc(256);
+    //for(i = d; i > 1; i--) DBUG(" |");
+    //if(d > 0) DBUG(" L");
+    sprint_game_state(emil, gs);
+    if(d == 3)DBUG(" %s\n", emil);
     free(emil);
     fprint_tree(gs->first, d+1);
     fprint_tree(gs->next, d);

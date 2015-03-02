@@ -1,3 +1,7 @@
+<joined roomId="83530982-3490-46df-8542-1348a343c370"/>
+<room roomId="83530982-3490-46df-8542-1348a343c370">
+  <data class="welcomeMessage" color="blue"/>
+</room>
 <room roomId="83530982-3490-46df-8542-1348a343c370">
   <data class="memento">
     <state class="state" turn="0" startPlayer="RED" currentPlayer="RED" currentMoveType="SET">
