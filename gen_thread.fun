@@ -15,6 +15,7 @@ void *gen_gs(void *arg)
                     if((old->r_current && old->leftR > 0) \
                     ||(old->b_current && old->leftB > 0)) {
                         dummy = simulate_set_move(old, prv, i);
+                        n_gen++;
                         qpush(dummy);
                         prv = dummy;
                     }

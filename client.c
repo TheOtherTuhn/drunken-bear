@@ -7,25 +7,36 @@ struct {
     int turn;
 } current_gs = {NULL, -1, {0}, 0};
 
+int n_gen = 0;
+#define N_THREADS 2
+
 int main(int argc, char *argv[])
 {
     move *last_move = malloc(sizeof(move));
     last_move->type = Null;
     last_move->from = last_move-> to = 0;
+
     char *emil = malloc(256);
     parseline(last_move);
     sprint_game_state(emil, current_gs.gs);
     printf("%s\n", emil);
     sprint_move(emil, *last_move);
     printf("%s\n", emil);
-    pthread_t *thread = malloc(sizeof(pthread_t));
-    pthread_create(thread, NULL, &gen_gs, NULL);
+
+    pthread_t threads[N_THREADS];
+    for(int t = 0; t < N_THREADS; t++)
+        pthread_create(&threads[t], NULL, &gen_gs, NULL);
+
     sleep(2);
-    pthread_cancel(*thread);
+
+    for(int t = 0; t < N_THREADS; t++)
+        pthread_cancel(threads[t]);
+
     //fprint_tree(current_gs.gs, 0);
-    char buf[170];
+/*    char buf[170];
     sprint_game_state(buf, minmax(current_gs.gs));
-    DBUG("%s\n", buf);
+    DBUG("%s\n", buf);*/
+    DBUG("Generated moves : %d, with %d threads\n", n_gen, N_THREADS);
     return 0;
 }
 
