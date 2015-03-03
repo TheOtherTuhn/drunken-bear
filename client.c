@@ -23,9 +23,9 @@ int main(int argc, char *argv[])
     sleep(2);
     pthread_cancel(*thread);
     //fprint_tree(current_gs.gs, 0);
-    char buf[170];
-    sprint_game_state(buf, minmax(current_gs.gs));
-    DBUG("%s\n", buf);
+    update_current_gs(*last_move);
+    sprint_game_state(emil, current_gs.gs);
+    DBUG("%s\n", emil);
     return 0;
 }
 
@@ -121,6 +121,36 @@ game_state *minmax(game_state *gs)
     return best_gs;
 }
 
+void update_current_gs(move played_move)
+{
+    game_state *cur = current_gs.gs->first;
+    do {
+        if(!moveequ(cur->last_move, played_move)) {
+            free_branch(cur->first);
+            if(cur->next) {
+                cur = cur->next;
+                free(cur->previous);
+            } else {
+                free(cur);
+                cur = NULL;
+            }
+        } else {
+            free(current_gs.gs);
+            current_gs.gs = cur;
+            cur = cur->next;
+        }
+    } while(cur);
+    current_gs.gs->parent = current_gs.gs->next = current_gs.gs->previous = NULL;
+    return;
+}
+void free_branch(game_state *branch)
+{
+    if(!branch) return;
+    free_branch(branch->next);
+    free_branch(branch->first);
+    free(branch);
+    return;
+}
 void fprint_tree(game_state *gs, int d)
 {
     if(!gs) return;
