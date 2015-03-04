@@ -7,17 +7,26 @@ struct {
     int turn;
 } current_gs = {NULL, -1, {0}, 0};
 
+struct {
+    pthread_mutex_t m;
+    int count;
+    enum {Generate, Wait, Exit} command;
+} thread_info = {PTHREAD_MUTEX_INITIALIZER, 0};
+
 int main(int argc, char *argv[])
 {
-	if(argc == 1)
-		printf("<join gameType=\"swc_2015_hey_danke_fuer_den_fisch\"/>");
-	else
-		printf("<joinPrepared reservationCode=\"%s\"/>", argv[1]);
-	
+    int *gs_count = malloc(sizeof(int));
+    *gs_count = 0;
     move *last_move = malloc(sizeof(move));
     last_move->type = Null;
     last_move->from = last_move-> to = 0;
     char *emil = malloc(256);
+
+	if(argc == 1)
+		printf("<join gameType=\"swc_2015_hey_danke_fuer_den_fisch\"/>");
+	else
+		printf("<joinPrepared reservationCode=\"%s\"/>", argv[1]);
+
     parseline(last_move);
     sprint_game_state(emil, current_gs.gs);
     printf("%s\n", emil);
@@ -26,12 +35,18 @@ int main(int argc, char *argv[])
     pthread_t *thread = malloc(sizeof(pthread_t));
     pthread_create(thread, NULL, &gen_gs, NULL);
     sleep(2);
-    pthread_cancel(*thread);
-    //fprint_tree(current_gs.gs, 0);
-    char buf[170];
-    sprint_game_state(buf, minmax(current_gs.gs));
-    DBUG("%s\n", buf);
+    thread_info.command = Exit;
+    pthread_join(*thread, (void**) &gs_count);
+    DBUG("One Thread generated %d gamestates!!\n", *gs_count);
+    update_current_gs(*last_move);
+    sprint_game_state(emil, current_gs.gs);
+    DBUG("%s\n", emil);
     return 0;
+}
+
+void update_current_gs(move played_move)
+{
+    return;
 }
 
 uint8_t nfromc(char c)

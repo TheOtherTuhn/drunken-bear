@@ -33,7 +33,7 @@
 #include "q.h"
 
 game_state *minmax(game_state*);
-void update_current_gs(game_state*, move);
+void update_current_gs(move);
 void* gen_gs(void*);
 int parseline(move*);
 uint8_t nfromc(char);
