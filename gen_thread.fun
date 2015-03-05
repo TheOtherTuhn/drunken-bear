@@ -115,6 +115,8 @@ void *gen_gs(void *arg)
                 *gs_count += generate(old);
             break;
         case Exit:
+            if(running)
+                decrease_thread_count();
             pthread_exit(gs_count);
             break;
         default:
