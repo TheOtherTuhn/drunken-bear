@@ -44,11 +44,6 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void update_current_gs(move played_move)
-{
-    return;
-}
-
 uint8_t nfromc(char c)
 {
     return c - '0';
@@ -141,6 +136,36 @@ game_state *minmax(game_state *gs)
     return best_gs;
 }
 
+void update_current_gs(move played_move)
+{
+    game_state *cur = current_gs.gs->first;
+    do {
+        if(!moveequ(cur->last_move, played_move)) {
+            free_branch(cur->first);
+            if(cur->next) {
+                cur = cur->next;
+                free(cur->previous);
+            } else {
+                free(cur);
+                cur = NULL;
+            }
+        } else {
+            free(current_gs.gs);
+            current_gs.gs = cur;
+            cur = cur->next;
+        }
+    } while(cur);
+    current_gs.gs->parent = current_gs.gs->next = current_gs.gs->previous = NULL;
+    return;
+}
+void free_branch(game_state *branch)
+{
+    if(!branch) return;
+    free_branch(branch->next);
+    free_branch(branch->first);
+    free(branch);
+    return;
+}
 void fprint_tree(game_state *gs, int d)
 {
     if(!gs) return;

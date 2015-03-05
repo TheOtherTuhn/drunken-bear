@@ -37,5 +37,6 @@ void update_current_gs(move);
 void* gen_gs(void*);
 int parseline(move*);
 uint8_t nfromc(char);
+void free_branch(game_state*);
 void fprint_tree(game_state*, int);
 #endif
