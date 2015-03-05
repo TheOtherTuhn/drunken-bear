@@ -12,6 +12,11 @@ int n_gen = 0;
 
 int main(int argc, char *argv[])
 {
+	if(argc == 1)
+		printf("<join gameType=\"swc_2015_hey_danke_fuer_den_fisch\"/>");
+	else
+		printf("<joinPrepared reservationCode=\"%s\"/>", argv[1]);
+	
     move *last_move = malloc(sizeof(move));
     last_move->type = Null;
     last_move->from = last_move-> to = 0;

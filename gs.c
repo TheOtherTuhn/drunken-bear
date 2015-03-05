@@ -58,7 +58,7 @@ game_state *simulate_set_move(game_state *par, game_state *prv, int f)
     else
         prv->next = new;
     new->previous = prv;
-    if(get_current_player(new) == PLAYER_RED) {
+    if(get_current_player(par) == PLAYER_RED) {
         new->leftR--;
         new->fields[f].rpen = 1;
     } else {
