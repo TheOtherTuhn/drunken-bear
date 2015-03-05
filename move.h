@@ -10,6 +10,7 @@ typedef struct {
     uint8_t from, to;
 } move;
 
+int moveequ(move, move);
 int get_to_x_move(move);
 int get_to_y_move(move);
 int get_from_x_move(move);
