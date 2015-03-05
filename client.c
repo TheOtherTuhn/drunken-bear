@@ -21,26 +21,31 @@ int main(int argc, char *argv[])
     last_move->type = Null;
     last_move->from = last_move-> to = 0;
     char *emil = malloc(256);
-
+    
+    printf("<protocol>");
 	if(argc == 1)
-		printf("<join gameType=\"swc_2015_hey_danke_fuer_den_fisch\"/>");
+		printf("<join gameType=\"swc_2015_hey_danke_fuer_den_fisch\"/>\n");
 	else
-		printf("<joinPrepared reservationCode=\"%s\"/>", argv[1]);
+		printf("<joinPrepared reservationCode=\"%s\"/>\n", argv[1]);
+    fflush(stdout);
 
     parseline(last_move);
     sprint_game_state(emil, current_gs.gs);
-    printf("%s\n", emil);
+    DBUG("%s\n", emil);
     sprint_move(emil, *last_move);
-    printf("%s\n", emil);
+    DBUG("%s\n", emil);
     pthread_t *thread = malloc(sizeof(pthread_t));
     pthread_create(thread, NULL, &gen_gs, NULL);
-    sleep(2);
+    sleep(1);
     thread_info.command = Exit;
     pthread_join(*thread, (void**) &gs_count);
     DBUG("One Thread generated %d gamestates!!\n", *gs_count);
+    sprint_move_xml(emil, minmax(current_gs.gs)->last_move, current_gs.sid);
+    printf("%s\n", emil);
     update_current_gs(*last_move);
     sprint_game_state(emil, current_gs.gs);
     DBUG("%s\n", emil);
+    free(emil);
     return 0;
 }
 
