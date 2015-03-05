@@ -15,6 +15,11 @@ struct {
     enum {Generate, Wait, Exit} command;
 } thread_info = {PTHREAD_MUTEX_INITIALIZER, 0};
 
+struct {
+    clock_t start;
+    int running;
+} stopwatch = {0, 0};
+
 int main(int argc, char *argv[])
 {
     int *gs_count = malloc(sizeof(int));
@@ -32,29 +37,33 @@ int main(int argc, char *argv[])
 		printf("<joinPrepared reservationCode=\"%s\"/>\n", argv[1]);
     fflush(stdout);
 
-    parseline(last_move);
-    sprint_game_state(emil, current_gs.gs);
-    DBUG("%s\n", emil);
-    sprint_move(emil, *last_move);
-    DBUG("%s\n", emil);
-
     pthread_t threads[N_THREADS];
     for(int t = 0; t < N_THREADS; t++)
         pthread_create(&threads[t], NULL, &gen_gs, NULL);
 
-    sleep(1);
-
-    thread_info.command = Exit;
-    int sum = 0;
-    for(int t = 0; t < N_THREADS; t++) {
-        pthread_join(threads[t],(void**) &gs_count);
-        sum += *gs_count;
+    while(parseline(last_move)) {
+        thread_info.command = Wait;
+        while(thread_info.count > 0) usleep(50);
+        update_current_gs(*last_move);
+        qempty();
+        push_leaves(current_gs.gs);
+        thread_info.command = Generate;
+        while(get_time() < 1.9) {
+            usleep(200);
+        }
+        thread_info.command = Wait;
+        while(thread_info.count > 0) usleep(50);
+        *last_move = minmax(current_gs.gs)->last_move;
+        sprint_move_xml(emil, *last_move, current_gs.sid);
+        printf("%s\n", emil);
+        fflush(stdout);
+        update_current_gs(*last_move);
+        qempty();
+        push_leaves(current_gs.gs);
+        thread_info.command = Generate;
     }
-
-    DBUG("%d Thread generated %d gamestates!!\n",N_THREADS,  sum);
-    update_current_gs(*last_move);
-    sprint_game_state(emil, current_gs.gs);
-    DBUG("%s\n", emil);
+    printf("</protocol>");
+    thread_info.command = Exit;
     free(emil);
     return 0;
 }
@@ -74,6 +83,7 @@ void parse_first_gs(void)
     int f = 0;
     current_gs.gs->leftR = current_gs.gs->leftB = 4;
     while(getdelim(&input, &size,'>', stdin) != -1 && f < 64) {
+        start_timer();
         if((found = strstr(input, "roomId=\""))) {
             memcpy(current_gs.sid, found+8, 36);
             current_gs.sid[36] = 0;
@@ -102,6 +112,7 @@ int parseline(move *last_move)
         parse_first_gs();
 
     while(getdelim(&input, &size, '>', stdin) != -1) {
+        start_timer();
         if(strstr(input, "lastMove")) {
             if(strstr(input, "NullMove")) {
                 last_move->type = Null;
@@ -151,6 +162,17 @@ game_state *minmax(game_state *gs)
     return best_gs;
 }
 
+void push_leaves(game_state *gs) 
+{
+    if(!gs) return;
+    if(!gs->first) {
+        qpush(gs);
+        return;
+    }
+    push_leaves(gs->next);
+    push_leaves(gs->first);
+    return;
+}
 void update_current_gs(move played_move)
 {
     game_state *cur = current_gs.gs->first;
@@ -194,4 +216,22 @@ void fprint_tree(game_state *gs, int d)
     fprint_tree(gs->first, d+1);
     fprint_tree(gs->next, d);
     return;
+}
+
+void start_timer()
+{
+    if(!stopwatch.running) {
+        stopwatch.start = clock();
+        stopwatch.running = 1;
+    }
+}
+
+double get_time()
+{
+    return (double) (clock() - stopwatch.start) / CLOCKS_PER_SEC;
+}
+
+void reset_timer()
+{
+    stopwatch.running = 0;
 }

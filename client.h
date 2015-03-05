@@ -21,22 +21,28 @@
 #else
 # define DBUG(s, ...)
 #endif
+
+#include <limits.h>
 #include <malloc.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "gs.h"
 #include "q.h"
 
 game_state *minmax(game_state*);
 void update_current_gs(move);
+void push_leaves(game_state*);
 void* gen_gs(void*);
 int parseline(move*);
 uint8_t nfromc(char);
 void free_branch(game_state*);
 void fprint_tree(game_state*, int);
+void start_timer();
+double get_time();
+void reset_timer();
 #endif
