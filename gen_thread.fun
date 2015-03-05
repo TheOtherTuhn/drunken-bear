@@ -18,9 +18,11 @@ int generate(game_state *old)
     int i, j;
     int count = 0;
     game_state *prv, *dummy;
+    if(old->turn == 3) DBUG("gengen\n");
+    if(old->turn == 4) DBUG("gen\n");
     if(old->turn < 8) {
         for(i = 0; i < 64; i++) {
-            if(old->fields[i].rpen == old->fields[i].bpen \
+            if(old->fields[i].rpen == 0 && 0 == old->fields[i].bpen \
             && old->fields[i].fish == 1) {
                 if((old->r_current && old->leftR > 0) \
                 ||(old->b_current && old->leftB > 0)) {
@@ -31,7 +33,6 @@ int generate(game_state *old)
                 }
             }
         }
-        old->last = prv;
     } else {
         prv = spawn_gs(old);
         prv->last_move = (move) {Null, 0, 0};
@@ -90,7 +91,6 @@ int generate(game_state *old)
                 }
             }
         }
-        old->last = prv;
     }
     return count;
 }
@@ -106,6 +106,8 @@ void *gen_gs(void *arg)
         switch(thread_info.command) {
         case Generate:
             if(!running) {
+                DBUG("I generated %d moves!\n", *gs_count);
+                *gs_count = 0;
                 increase_thread_count();
                 running = 1;
             }

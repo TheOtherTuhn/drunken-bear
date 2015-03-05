@@ -35,7 +35,7 @@
 #include "q.h"
 
 game_state *minmax(game_state*);
-void update_current_gs(move);
+void update_current_gs(game_state*, move);
 void push_leaves(game_state*);
 void* gen_gs(void*);
 int parseline(move*);

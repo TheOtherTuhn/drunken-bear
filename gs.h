@@ -24,8 +24,8 @@ typedef struct _gs {
     move last_move; /*move that produced this gamestate*/
     /*pointers for tree structure*/
     struct _gs *parent;
-    struct _gs *next, *previous; /*siblings*/
-    struct _gs *first, *last; /*children*/
+    struct _gs *next; /*siblings*/
+    struct _gs *first; /*children*/
 } game_state;
 
 void init_game_state(game_state*);

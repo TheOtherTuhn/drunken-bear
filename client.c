@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     int *gs_count = malloc(sizeof(int));
     *gs_count = 0;
     move *last_move = malloc(sizeof(move));
-    last_move->type = Null;
+    last_move->type = 0;
     last_move->from = last_move-> to = 0;
 
     char *emil = malloc(256);
@@ -44,20 +44,25 @@ int main(int argc, char *argv[])
     while(parseline(last_move)) {
         thread_info.command = Wait;
         while(thread_info.count > 0) usleep(50);
-        update_current_gs(*last_move);
+        update_current_gs(current_gs.gs->first, *last_move);
         qempty();
         push_leaves(current_gs.gs);
         thread_info.command = Generate;
         while(get_time() < 1.9) {
             usleep(200);
         }
+        reset_timer();
         thread_info.command = Wait;
         while(thread_info.count > 0) usleep(50);
         *last_move = minmax(current_gs.gs)->last_move;
         sprint_move_xml(emil, *last_move, current_gs.sid);
+        if(current_gs.gs->turn == 4) fprint_tree(current_gs.gs, 0);
+        DBUG("%s\n", emil);
         printf("%s\n", emil);
         fflush(stdout);
-        update_current_gs(*last_move);
+        update_current_gs(current_gs.gs->first, *last_move);
+        sprint_game_state(emil, current_gs.gs);
+        DBUG("%s\n", emil);
         qempty();
         push_leaves(current_gs.gs);
         thread_info.command = Generate;
@@ -145,6 +150,10 @@ end:
 game_state *minmax(game_state *gs)
 {
     if(!gs->first) {
+    if(!gs->parent) {
+        gs->last_move = (move){Null,0,0};
+        return gs;
+    }
         gs->rating = rate_gs(gs);
         return gs;
     }
@@ -173,28 +182,23 @@ void push_leaves(game_state *gs)
     push_leaves(gs->first);
     return;
 }
-void update_current_gs(move played_move)
+
+void update_current_gs(game_state *cur, move played_move)
 {
-    game_state *cur = current_gs.gs->first;
-    do {
-        if(!moveequ(cur->last_move, played_move)) {
-            free_branch(cur->first);
-            if(cur->next) {
-                cur = cur->next;
-                free(cur->previous);
-            } else {
-                free(cur);
-                cur = NULL;
-            }
-        } else {
-            free(current_gs.gs);
-            current_gs.gs = cur;
-            cur = cur->next;
-        }
-    } while(cur);
-    current_gs.gs->parent = current_gs.gs->next = current_gs.gs->previous = NULL;
-    return;
+    if(!cur || played_move.type == 0) return;
+    if(!moveequ(cur->last_move, played_move)) {
+        free_branch(cur->first);
+        update_current_gs(cur->next, played_move);
+        free(cur);
+    } else {
+        update_current_gs(cur->next, played_move);
+        cur->parent = NULL;
+        cur->next = NULL;
+        free(current_gs.gs);
+        current_gs.gs = cur;
+    }
 }
+
 void free_branch(game_state *branch)
 {
     if(!branch) return;
@@ -206,12 +210,12 @@ void free_branch(game_state *branch)
 void fprint_tree(game_state *gs, int d)
 {
     if(!gs) return;
-//    int i;
+    int i;
     char *emil = malloc(256);
-    //for(i = d; i > 1; i--) DBUG(" |");
-    //if(d > 0) DBUG(" L");
-    sprint_game_state(emil, gs);
-    if(d == 3)DBUG(" %s\n", emil);
+    for(i = d; i > 1; i--) DBUG(" |");
+    if(d > 0) DBUG(" L");
+    sprint_move(emil, gs->last_move);
+    DBUG(" %s\n", emil);
     free(emil);
     fprint_tree(gs->first, d+1);
     fprint_tree(gs->next, d);

@@ -9,8 +9,8 @@ void init_game_state(game_state *gs) {
     gs->leftB = gs->leftR = 4;
     gs->last_move = (move){0, 0, 0};
     gs->parent = NULL;
-    gs->next = gs->previous = NULL;
-    gs->first = gs->last = NULL;
+    gs->next = NULL;
+    gs->first = NULL;
 }
 
 game_state *spawn_gs(game_state *p)
@@ -57,7 +57,6 @@ game_state *simulate_set_move(game_state *par, game_state *prv, int f)
         par->first = new;
     else
         prv->next = new;
-    new->previous = prv;
     if(get_current_player(par) == PLAYER_RED) {
         new->leftR--;
         new->fields[f].rpen = 1;
@@ -73,7 +72,6 @@ game_state *simulate_run_move(game_state *par, game_state *prv, int from, int to
 {
     game_state *new = spawn_gs(par);
     prv->next = new;
-    new->previous = prv;
     if(get_current_player(new) == PLAYER_RED) {
         new->pointsR += par->fields[from].fish;
         new->fields[to].rpen = 1;
