@@ -1,5 +1,10 @@
 #include "move.h"
 
+int moveequ(move a, move b)
+{
+    return (a.type == b.type) && (a.from == b.from) && (a.to == b.to);
+}
+
 int get_to_x_move(move m)
 {
     return (m.to & (7<<3))>>3;

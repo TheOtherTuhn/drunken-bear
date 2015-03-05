@@ -7,21 +7,29 @@ struct {
     int turn;
 } current_gs = {NULL, -1, {0}, 0};
 
-int n_gen = 0;
 #define N_THREADS 2
+
+struct {
+    pthread_mutex_t m;
+    int count;
+    enum {Generate, Wait, Exit} command;
+} thread_info = {PTHREAD_MUTEX_INITIALIZER, 0};
 
 int main(int argc, char *argv[])
 {
-	if(argc == 1)
-		printf("<join gameType=\"swc_2015_hey_danke_fuer_den_fisch\"/>");
-	else
-		printf("<joinPrepared reservationCode=\"%s\"/>", argv[1]);
-	
+    int *gs_count = malloc(sizeof(int));
+    *gs_count = 0;
     move *last_move = malloc(sizeof(move));
     last_move->type = Null;
     last_move->from = last_move-> to = 0;
 
     char *emil = malloc(256);
+
+	if(argc == 1)
+		printf("<join gameType=\"swc_2015_hey_danke_fuer_den_fisch\"/>");
+	else
+		printf("<joinPrepared reservationCode=\"%s\"/>", argv[1]);
+
     parseline(last_move);
     sprint_game_state(emil, current_gs.gs);
     printf("%s\n", emil);
@@ -34,14 +42,18 @@ int main(int argc, char *argv[])
 
     sleep(2);
 
+    thread_info.command = Exit;
     for(int t = 0; t < N_THREADS; t++)
-        pthread_cancel(threads[t]);
+        pthread_join(threads[t],(void**) &gs_count);
 
     //fprint_tree(current_gs.gs, 0);
 /*    char buf[170];
     sprint_game_state(buf, minmax(current_gs.gs));
     DBUG("%s\n", buf);*/
-    DBUG("Generated moves : %d, with %d threads\n", n_gen, N_THREADS);
+    DBUG("%d Thread generated %d gamestates!!\n",N_THREADS,  *gs_count);
+    update_current_gs(*last_move);
+    sprint_game_state(emil, current_gs.gs);
+    DBUG("%s\n", emil);
     return 0;
 }
 
@@ -137,6 +149,36 @@ game_state *minmax(game_state *gs)
     return best_gs;
 }
 
+void update_current_gs(move played_move)
+{
+    game_state *cur = current_gs.gs->first;
+    do {
+        if(!moveequ(cur->last_move, played_move)) {
+            free_branch(cur->first);
+            if(cur->next) {
+                cur = cur->next;
+                free(cur->previous);
+            } else {
+                free(cur);
+                cur = NULL;
+            }
+        } else {
+            free(current_gs.gs);
+            current_gs.gs = cur;
+            cur = cur->next;
+        }
+    } while(cur);
+    current_gs.gs->parent = current_gs.gs->next = current_gs.gs->previous = NULL;
+    return;
+}
+void free_branch(game_state *branch)
+{
+    if(!branch) return;
+    free_branch(branch->next);
+    free_branch(branch->first);
+    free(branch);
+    return;
+}
 void fprint_tree(game_state *gs, int d)
 {
     if(!gs) return;
