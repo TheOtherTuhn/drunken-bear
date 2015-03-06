@@ -71,7 +71,10 @@ game_state *simulate_set_move(game_state *par, game_state *prv, int f)
 game_state *simulate_run_move(game_state *par, game_state *prv, int from, int to)
 {
     game_state *new = spawn_gs(par);
-    prv->next = new;
+    if(!par->first)
+        par->first = new;
+    else
+        prv->next = new;
     if(get_current_player(new) == PLAYER_RED) {
         new->pointsR += par->fields[from].fish;
         new->fields[to].rpen = 1;

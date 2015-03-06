@@ -18,9 +18,7 @@ int generate(game_state *old)
     int i, j;
     int count = 0;
     game_state *prv, *dummy;
-    if(old->turn == 3) DBUG("gengen\n");
-    if(old->turn == 4) DBUG("gen\n");
-    if(old->turn < 8) {
+    if(old->turn < 7) {
         for(i = 0; i < 64; i++) {
             if(old->fields[i].rpen == 0 && 0 == old->fields[i].bpen \
             && old->fields[i].fish == 1) {
