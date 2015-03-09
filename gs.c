@@ -1,7 +1,7 @@
 #include "gs.h"
 
 void init_game_state(game_state *gs) {
-    for(int i = 0; i < 64; gs->fields[i++] = (field){0,0,0});
+    for(int i = 0; i < 64; gs->fields[i++] = (field) { 0,0,0 });
     gs->rating = 0;
     gs->r_current = gs->b_current = 0;
     gs->pointsB = gs->pointsR = 0;

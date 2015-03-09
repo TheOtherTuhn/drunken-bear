@@ -10,12 +10,6 @@ struct {
 #define N_THREADS 2
 
 struct {
-    pthread_mutex_t m;
-    int count;
-    enum {Generate, Wait, Exit} command;
-} thread_info = {PTHREAD_MUTEX_INITIALIZER, 0};
-
-struct {
     clock_t start;
     int running;
 } stopwatch = {0, 0};
@@ -39,22 +33,27 @@ int main(int argc, char *argv[])
 
     pthread_t threads[N_THREADS];
     for(int t = 0; t < N_THREADS; t++)
-        pthread_create(&threads[t], NULL, &gen_gs, NULL);
+        pthread_create(&threads[t], NULL, &gen_gs, &current_gs);
 
     while(parseline(last_move)) {
-        thread_info.command = Wait;
-        while(thread_info.count > 0) usleep(50);
+        set_thread_command(Wait);
+        while(get_thread_count() > 0) usleep(50);
         update_current_gs(current_gs.gs->first, *last_move);
         qempty();
         push_leaves(current_gs.gs);
-        thread_info.command = Generate;
-        while(get_time() < 1.9) {
+        set_thread_command(Generate);
+        DBUG("Begin Stopwatch...");
+        /*while(get_time() < 1.9) {
             usleep(200);
         }
-        reset_timer();
-        thread_info.command = Wait;
-        while(thread_info.count > 0) usleep(50);
+        reset_timer();*/
+        usleep(1000000);
+        DBUG("Done\n");
+        set_thread_command(Wait);
+        while(get_thread_count() > 0) usleep(50);
+        DBUG("Begin MinMax...");
         *last_move = minmax(current_gs.gs)->last_move;
+        DBUG("Done\n");
         sprint_move_xml(emil, *last_move, current_gs.sid);
         if(current_gs.gs->turn == 4) fprint_tree(current_gs.gs, 0);
         DBUG("%s\n", emil);
@@ -65,10 +64,10 @@ int main(int argc, char *argv[])
         DBUG("%s\n", emil);
         qempty();
         push_leaves(current_gs.gs);
-        thread_info.command = Generate;
+        set_thread_command(Generate);
     }
     printf("</protocol>");
-    thread_info.command = Exit;
+    set_thread_command(Exit);
     free(emil);
     return 0;
 }
@@ -145,29 +144,26 @@ end:
     return r;
 }
 
-#include "gen_thread.fun"
-
 game_state *minmax(game_state *gs)
 {
     if(!gs->first) {
-    if(!gs->parent) {
-        gs->last_move = (move){Null,0,0};
-        return gs;
-    }
         gs->rating = rate_gs(gs);
         return gs;
     }
     game_state *cur = gs->first;
-    game_state *best_gs = malloc(sizeof(game_state));
-    init_game_state(best_gs);
-    best_gs->rating = (current_gs.we_are_red && gs->r_current)? INT_MIN : INT_MAX; 
+    game_state *best_gs = cur;
+    cur = gs->first;
     while((cur = cur->next)) {
-        if(current_gs.we_are_red && gs->r_current) {
-            best_gs = (best_gs->rating < minmax(cur)->rating)? cur : best_gs;
+        minmax(cur);
+        if(gs->r_current == current_gs.we_are_red) {
+            if(cur->rating > best_gs->rating)
+                best_gs = cur;
         } else {
-            best_gs = (best_gs->rating > minmax(cur)->rating)? cur : best_gs;
+            if(cur->rating < best_gs->rating)
+                best_gs = cur;
         }
     }
+    gs->rating = best_gs->rating;
     return best_gs;
 }
 

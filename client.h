@@ -2,13 +2,6 @@
 #define __CLIENT_H__
 /*Defines game logic*/
 #define BUFSIZE 256
-#define E(f)  (f+8)
-#define NE(f) (f+(f&1)?-1:7)
-#define NW(f) (f+(f&1)?-9:-1)
-#define W(f)  (f-8)
-#define SW(f) (f+(f&1)?-7:1)
-#define SE(f) (f+(f&1)?1:9)
-#define INBOUNDS(f) ((0<=f)&&(f<64))
 #define DEBUG 1
 #ifdef DEBUG
 # if DEBUG == 1
@@ -31,6 +24,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "gen_thread.h"
 #include "gs.h"
 #include "q.h"
 
