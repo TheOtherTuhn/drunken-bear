@@ -28,11 +28,17 @@
 #include "gs.h"
 #include "q.h"
 
+struct l_move{
+    move n_move; //also used for temporarily strong own move for sending
+    move s_move;
+    move r_move;
+} last_move;
+
 game_state *minmax(game_state*);
 void update_current_gs(game_state*, move);
 void push_leaves(game_state*);
 void* gen_gs(void*);
-int parseline(move*);
+int parseline(struct l_move*);
 uint8_t nfromc(char);
 void free_branch(game_state*);
 void fprint_tree(game_state*, int);

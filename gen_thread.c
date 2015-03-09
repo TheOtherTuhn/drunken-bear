@@ -36,7 +36,7 @@ int generate(game_state *old)
     int i, j;
     int count = 0;
     game_state *prv, *dummy;
-    if(old->turn < 7) {
+    if(old->turn < 8) {
         for(i = 0; i < 64; i++) {
             if(old->fields[i].rpen == 0 && 0 == old->fields[i].bpen \
             && old->fields[i].fish == 1) {
@@ -50,10 +50,10 @@ int generate(game_state *old)
             }
         }
     } else {
-       // prv = spawn_gs(old);
-        //prv->last_move = (move) {Null, 0, 0};
-        //old->first = prv;
-        //qpush(prv);
+        prv = spawn_gs(old);
+        prv->last_move = (move) {Null, 0, 0};
+        old->first = prv;
+        qpush(prv);
         for(i = 0; i < 64; i++) {
             if((old->fields[i].rpen && old->b_current) \
             || (old->fields[i].bpen && old->r_current)) {
@@ -128,7 +128,7 @@ void *gen_gs(void *args)
                 increase_thread_count();
                 running = 1;
             }
-            if(!(old = qpop()) || old->turn > current_gs->gs->turn)
+            if(!(old = qpop()) || old->turn > current_gs->gs->turn + 4)
                 usleep(200);
             else
                 *gs_count += generate(old);

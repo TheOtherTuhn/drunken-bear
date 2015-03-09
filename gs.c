@@ -25,8 +25,8 @@ game_state *spawn_gs(game_state *p)
     new->leftB = p->leftB;
     /* It's the other player's turn unless the last penguin has just been set */
     if(new->turn != 8) {
-        new->r_current = !p->r_current;
-        new->b_current = !p->b_current;
+        new->r_current = p->b_current;
+        new->b_current = p->r_current;
     }
     return new;
 }
@@ -45,7 +45,9 @@ void set_current_player(game_state *gs, int p)
 
 int rate_gs(game_state *gs)
 {
-    return get_to_x_move(gs->last_move);
+    if(gs->last_move.type == Null)
+        return 10000;
+    return gs->pointsR - gs->pointsB;
 }
 
 game_state *simulate_set_move(game_state *par, game_state *prv, int f)

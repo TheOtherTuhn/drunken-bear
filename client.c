@@ -18,10 +18,9 @@ int main(int argc, char *argv[])
 {
     int *gs_count = malloc(sizeof(int));
     *gs_count = 0;
-    move *last_move = malloc(sizeof(move));
-    last_move->type = 0;
-    last_move->from = last_move-> to = 0;
-
+    last_move.n_move = (move){0,0,0};
+    last_move.s_move = (move){0,0,0};
+    last_move.r_move = (move){0,0,0};
     char *emil = malloc(256);
     
     printf("<protocol>");
@@ -35,10 +34,19 @@ int main(int argc, char *argv[])
     for(int t = 0; t < N_THREADS; t++)
         pthread_create(&threads[t], NULL, &gen_gs, &current_gs);
 
-    while(parseline(last_move)) {
+    while(parseline(&last_move)) {
         set_thread_command(Wait);
         while(get_thread_count() > 0) usleep(50);
-        update_current_gs(current_gs.gs->first, *last_move);
+        if(last_move.n_move.type != 0)
+            update_current_gs(current_gs.gs->first, last_move.n_move);
+        if(last_move.s_move.type == Set) {
+            DBUG("Set a setMove\n");
+            update_current_gs(current_gs.gs->first, last_move.s_move);
+        }
+        if(last_move.r_move.type == Run) {
+            DBUG("Set a runMove\n");
+            update_current_gs(current_gs.gs->first, last_move.r_move);
+        }
         qempty();
         push_leaves(current_gs.gs);
         set_thread_command(Generate);
@@ -52,18 +60,22 @@ int main(int argc, char *argv[])
         set_thread_command(Wait);
         while(get_thread_count() > 0) usleep(50);
         DBUG("Begin MinMax...");
-        *last_move = minmax(current_gs.gs)->last_move;
+        last_move.n_move = minmax(current_gs.gs)->last_move;
         DBUG("Done\n");
-        sprint_move_xml(emil, *last_move, current_gs.sid);
+        sprint_move_xml(emil, last_move.n_move, current_gs.sid);
         DBUG("%s\n", emil);
         printf("%s\n", emil);
         fflush(stdout);
-        update_current_gs(current_gs.gs->first, *last_move);
+        update_current_gs(current_gs.gs->first, last_move.n_move);
         sprint_game_state(emil, current_gs.gs);
         DBUG("%s\n", emil);
         qempty();
         push_leaves(current_gs.gs);
         set_thread_command(Generate);
+
+        last_move.n_move = (move){0,0,0};
+        last_move.s_move = (move){0,0,0};
+        last_move.r_move = (move){0,0,0};
     }
     printf("</protocol>");
     set_thread_command(Exit);
@@ -105,7 +117,7 @@ void parse_first_gs(void)
     return;
 }
 
-int parseline(move *last_move)
+int parseline(struct l_move *last_move)
 {
     size_t size = BUFSIZE;
     char *input = malloc(size);
@@ -118,16 +130,16 @@ int parseline(move *last_move)
         start_timer();
         if(strstr(input, "lastMove")) {
             if(strstr(input, "NullMove")) {
-                last_move->type = Null;
+                last_move->n_move.type = Null;
             } else if (strstr(input, "SetMove")) {
-                last_move->type = Set;
-                last_move->to   = nfromc(strstr(input, "setX=\"")[6]) << 3 \
+                last_move->s_move.type = Set;
+                last_move->s_move.to   = nfromc(strstr(input, "setX=\"")[6]) << 3 \
                                 | nfromc(strstr(input, "setY=\"")[6]);
             } else if(strstr(input, "RunMove")) {
-                last_move->type = Run;
-                last_move->from = nfromc(strstr(input, "fromX=\"")[7])<< 3 \
+                last_move->r_move.type = Run;
+                last_move->r_move.from = nfromc(strstr(input, "fromX=\"")[7])<< 3 \
                                 | nfromc(strstr(input, "fromY=\"")[7]);
-                last_move->to   = nfromc(strstr(input, "toX=\"")[5]) << 3 \
+                last_move->r_move.to   = nfromc(strstr(input, "toX=\"")[5]) << 3 \
                                 | nfromc(strstr(input, "toY=\"")[5]);
             }
         } else if(strstr(input, "MoveRequest")) {
@@ -191,6 +203,7 @@ void update_current_gs(game_state *cur, move played_move)
         cur->next = NULL;
         free(current_gs.gs);
         current_gs.gs = cur;
+        DBUG("Found it!\n");
     }
 }
 
