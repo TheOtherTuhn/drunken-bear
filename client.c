@@ -55,7 +55,6 @@ int main(int argc, char *argv[])
         *last_move = minmax(current_gs.gs)->last_move;
         DBUG("Done\n");
         sprint_move_xml(emil, *last_move, current_gs.sid);
-        if(current_gs.gs->turn == 4) fprint_tree(current_gs.gs, 0);
         DBUG("%s\n", emil);
         printf("%s\n", emil);
         fflush(stdout);

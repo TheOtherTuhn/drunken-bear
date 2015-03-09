@@ -50,10 +50,10 @@ int generate(game_state *old)
             }
         }
     } else {
-        prv = spawn_gs(old);
-        prv->last_move = (move) {Null, 0, 0};
-        old->first = prv;
-        qpush(prv);
+       // prv = spawn_gs(old);
+        //prv->last_move = (move) {Null, 0, 0};
+        //old->first = prv;
+        //qpush(prv);
         for(i = 0; i < 64; i++) {
             if((old->fields[i].rpen && old->b_current) \
             || (old->fields[i].bpen && old->r_current)) {
