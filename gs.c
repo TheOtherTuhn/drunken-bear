@@ -27,6 +27,9 @@ game_state *spawn_gs(game_state *p)
     if(new->turn != 8) {
         new->r_current = p->b_current;
         new->b_current = p->r_current;
+    } else {
+        new->r_current = p->r_current;
+        new->b_current = p->b_current;
     }
     return new;
 }

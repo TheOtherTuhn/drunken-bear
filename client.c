@@ -50,25 +50,19 @@ int main(int argc, char *argv[])
         qempty();
         push_leaves(current_gs.gs);
         set_thread_command(Generate);
-        DBUG("Begin Stopwatch...");
         /*while(get_time() < 1.9) {
             usleep(200);
         }
         reset_timer();*/
         usleep(1000000);
-        DBUG("Done\n");
         set_thread_command(Wait);
         while(get_thread_count() > 0) usleep(50);
-        DBUG("Begin MinMax...");
         last_move.n_move = minmax(current_gs.gs)->last_move;
-        DBUG("Done\n");
         sprint_move_xml(emil, last_move.n_move, current_gs.sid);
         DBUG("%s\n", emil);
         printf("%s\n", emil);
         fflush(stdout);
         update_current_gs(current_gs.gs->first, last_move.n_move);
-        sprint_game_state(emil, current_gs.gs);
-        DBUG("%s\n", emil);
         qempty();
         push_leaves(current_gs.gs);
         set_thread_command(Generate);
