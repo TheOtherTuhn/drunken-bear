@@ -1,6 +1,6 @@
 #Declaration of variables
 CC = cc 
-CC_FLAGS = -Wall -Werror -std=c99 -D_GNU_SOURCE -pthread
+CC_FLAGS = -Wall -Werror -std=c99 -D_GNU_SOURCE -pthread -g
 LDADD?=-pthread
 
 # File names

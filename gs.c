@@ -55,7 +55,7 @@ int rate_gs(game_state *gs)
 
 game_state *simulate_set_move(game_state *par, game_state *prv, int f)
 {
-    if(par->leftR == 0 || par->leftB == 0)
+    if(par->leftR == 0 && par->leftB == 0)
         return NULL;
     game_state *new = spawn_gs(par);
     if(!par->first)

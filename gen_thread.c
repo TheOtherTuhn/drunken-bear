@@ -36,10 +36,7 @@ int generate(game_state *old)
     int i, j;
     int count = 0;
     game_state *prv, *dummy;
-    char *buf = malloc(256);
-    sprint_game_state(buf, old);
-    DBUG("%s\n", buf);
-    if(old->turn < 7) {
+    if(old->turn < 8) {
         for(i = 0; i < 64; i++) {
             if(old->fields[i].rpen == 0 && 0 == old->fields[i].bpen \
             && old->fields[i].fish == 1) {
@@ -132,7 +129,7 @@ void *gen_gs(void *args)
                 running = 1;
             }
             /* Only generate one depth! */
-            if(!(old = qpop()) || old->turn != current_gs->gs->turn)
+            if(!(old = qpop()) || old->turn > current_gs->gs->turn + 1)
                 usleep(200);
             else
                 *gs_count += generate(old);
